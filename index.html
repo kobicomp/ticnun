@@ -1,0 +1,3535 @@
+
+<!DOCTYPE html>
+<html dir="rtl">
+<head>
+   <meta charset="UTF-8">
+   <title>לוח שיעורים שנתי - מתכנן למידה</title>
+   <style>
+       /* Basic styles */
+       body {
+           font-family: system-ui, -apple-system;
+           margin: 0;
+           padding: 20px;
+           background-color: #f0f2f5;
+       }
+       .container {
+           background-color: white;
+           padding: 20px;
+           border-radius: 12px;
+           box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+           width: 98%;
+           max-width: 1800px;
+           margin: 0 auto;
+           overflow-x: auto;
+       }
+       h1, h2 {
+           color: #1a237e;
+           text-align: center;
+           margin-bottom: 24px;
+       }
+
+       /* Tabs styles */
+       .tabs {
+           margin-top: 20px;
+       }
+       .tab-buttons {
+           display: flex;
+           gap: 10px;
+           margin-bottom: 20px;
+           border-bottom: 2px solid #e0e0e0;
+           padding-bottom: 10px;
+       }
+
+       .tab-button {
+           padding: 12px 24px;
+           background-color: #f8f9fa;
+           color: #666;
+           border: none;
+           border-radius: 8px 8px 0 0;
+           cursor: pointer;
+           font-size: 16px;
+           transition: all 0.2s;
+       }
+       .tab-button:hover {
+           background-color: #e3f2fd;
+           color: #1a237e;
+       }
+       .tab-button.active {
+           background-color: #1a237e;
+           color: white;
+       }
+       .tab-content {
+           display: none;
+           padding: 20px;
+           background-color: white;
+           border-radius: 0 8px 8px 8px;
+       }
+       .tab-content.active {
+           display: block;
+       }
+       const topicsUIStyles = `
+       .planning-container {
+           display: flex;
+           flex-direction: column;
+           gap: 15px;
+       }
+
+       .add-topic-button-container {
+           margin-top: 10px;
+           padding: 10px;
+           border-top: 1px solid #e0e0e0;
+       }
+
+       .topic-container {
+     border: 1px solid #e0e0e0;
+     padding: 15px;
+     margin-bottom: 15px;
+     border-radius: 8px;
+     background-color: white;
+     box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+ }
+
+ .topic-header {
+display: flex;
+align-items: center;
+gap: 10px;
+margin-bottom: 15px;
+padding: 10px;
+background-color: #f8f9fa;
+border-radius: 4px;
+}
+.expand-button {
+padding: 4px 8px;
+background: none;
+border: none;
+cursor: pointer;
+font-size: 16px;
+color: #1a237e;
+transition: transform 0.3s ease;
+}
+
+       .expand-button.expanded {
+           transform: rotate(90deg);
+       }
+
+       .subtopics-container {
+           overflow: hidden;
+           max-height: 0;
+           transition: max-height 0.3s ease-out;
+       }
+
+       .subtopics-container.expanded {
+           max-height: 1000px; /* או כל גובה מספיק גדול */
+           transition: max-height 0.3s ease-in;
+       }
+
+       .topic-title {
+     width: 95%;
+     font-weight: 500;
+     color: #1a237e;
+     text-align: center;
+ }
+ .topic-lessons {
+     width: 5%;
+     text-align: center;
+ }
+       .subtopic-row {
+           margin-left: 20px;
+           padding: 10px;
+           background-color: #f8f9fa;
+           border-radius: 4px;
+           margin-bottom: 8px;
+       }
+       `;
+
+       /* Subject section styles */
+       .subjects-section {
+           margin-bottom: 20px;
+           padding: 15px;
+           background-color: #f8f9fa;
+           border-radius: 8px;
+           text-align: center;
+       }
+       .subject-select {
+           padding: 10px;
+           min-width: 200px;
+           border: 2px solid #e0e0e0;
+           border-radius: 8px;
+           font-size: 16px;
+       }
+       .subject-controls {
+           display: flex;
+           justify-content: center;
+           gap: 10px;
+           align-items: center;
+           margin-bottom: 10px;
+       }
+       #currentSubject {
+           font-weight: bold;
+           color: #1a237e;
+           margin-top: 10px;
+       }
+       #addSubjectForm {
+           display: none;
+           margin-top: 10px;
+           padding: 10px;
+           background: white;
+           border-radius: 8px;
+       }
+
+       /* All existing styles remain the same */
+       const additionalStyles = `
+.cancelled-lesson {
+    opacity: 0.7;
+    background-color: #ffebee !important;
+    position: relative;
+}
+
+.cancelled-lesson::after {
+    content: 'בוטל';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background-color: #ef5350;
+    color: white;
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-size: 12px;
+    z-index: 1;
+}
+
+.cancelled-day {
+    background-color: #ffebee !important;
+    position: relative;
+}
+.delete-btn {
+    background-color: #d32f2f;
+    color: white;
+}
+
+.delete-btn:hover {
+    background-color: #b71c1c;
+}
+.cancelled-day::after {
+    content: 'יום מבוטל';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background-color: #d32f2f;
+    color: white;
+    padding: 4px 12px;
+    border-radius: 4px;
+    font-size: 14px;
+    z-index: 1;
+}
+
+.lesson-cell {
+    position: relative;
+    margin: 4px 0;
+    padding: 8px;
+    border: 1px solid #e0e0e0;
+    border-radius: 4px;
+    background-color: white;
+}
+`;
+       .input-group {
+           margin-bottom: 24px;
+           display: flex;
+           gap: 12px;
+           justify-content: center;
+           flex-wrap: wrap;
+           align-items: center;
+           padding: 10px;
+           background-color: #f8f9fa;
+           border-radius: 8px;
+       }
+       .input-group > div {
+           display: flex;
+           flex-direction: column;
+           gap: 5px;
+       }
+
+/* Input styling */
+input[type="text"],
+input[type="number"],
+textarea {
+    font-family: inherit;
+    font-size: 14px;
+    padding: 8px;
+    border: 1px solid #e0e0e0;
+    border-radius: 4px;
+    transition: border-color 0.2s;
+}
+
+input[type="text"]:focus,
+input[type="number"]:focus,
+textarea:focus {
+    border-color: #1a237e;
+    outline: none;
+    box-shadow: 0 0 0 2px rgba(26,35,126,0.1);
+}
+
+/* Expand/Collapse animation */
+.expand-button.expanded {
+    transform: rotate(90deg);
+}
+
+.subtopics-container {
+    overflow: hidden;
+    max-height: 0;
+    transition: max-height 0.3s ease-out;
+}
+
+.subtopics-container.expanded {
+    max-height: 1000px;
+    transition: max-height 0.3s ease-in;
+}
+Last edited
+       input[type="date"],
+       input[type="number"],
+       input[type="text"],
+       select,
+       textarea {
+           padding: 10px;
+           border: 2px solid #e0e0e0;
+           border-radius: 8px;
+           font-size: 16px;
+           background-color: white;
+       }
+       button {
+           padding: 12px 24px;
+           background-color: #1a237e;
+           color: white;
+           border: none;
+           border-radius: 8px;
+           cursor: pointer;
+           font-size: 16px;
+           transition: background-color 0.2s;
+       }
+       button:hover {
+           background-color: #283593;
+       }
+
+       /* Tables styles */
+       .lessons-table {
+           width: 100%;
+           max-width: 1200px;
+           margin: 20px auto;
+           border-collapse: collapse;
+           background-color: white;
+           box-shadow: 0 1px 4px rgba(0,0,0,0.1);
+       }
+       .lessons-table th,
+       .lessons-table td {
+           padding: 12px;
+           border: 1px solid #e0e0e0;
+           text-align: center;
+       }
+       .lessons-table th {
+           background-color: #e3f2fd;
+           color: #1a237e;
+           font-weight: bold;
+       }
+       .lessons-table input[type="number"] {
+           width: 60px;
+           text-align: center;
+       }
+
+       .main-table-wrapper {
+           width: 100%;
+           overflow-x: auto;
+           margin-top: 20px;
+       }
+       .main-table {
+           width: 100%;
+           border-collapse: separate;
+           border-spacing: 0;
+           table-layout: fixed;
+       }
+       .main-table th,
+       .main-table td {
+           padding: 12px;
+           border: 1px solid #e0e0e0;
+           text-align: center;
+           min-width: 120px;
+       }
+       .main-table th {
+           background-color: #e3f2fd;
+           color: #1a237e;
+           position: sticky;
+           top: 0;
+           z-index: 10;
+       }
+
+       /* Planning styles */
+       /* עדכון סגנון הכרטיסיות */
+.tabs {
+    margin-top: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.tab-buttons {
+    display: flex;
+    gap: 0;  /* ביטול הרווח בין הכפתורים */
+    margin-bottom: 0;
+    border-bottom: none;
+    padding-bottom: 0;
+    width: 100%;
+}
+
+.tab-button {
+    flex: 1;  /* חלוקה שווה של הרוחב */
+    padding: 15px 24px;
+    background-color: #f8f9fa;
+    color: #666;
+    border: 1px solid #e0e0e0;
+    border-bottom: none;
+    border-radius: 12px 12px 0 0;
+    cursor: pointer;
+    font-size: 16px;
+    transition: all 0.3s;
+    position: relative;
+    overflow: hidden;
+}
+
+.tab-button:hover {
+    background-color: #e3f2fd;
+    color: #1a237e;
+}
+
+.tab-button.active {
+    background-color: #1a237e;
+    color: white;
+    border-color: #1a237e;
+}
+
+.tab-button.active::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 3px;
+    background-color: #4caf50;
+}
+
+.tab-content {
+    display: none;
+    padding: 30px;
+    background-color: white;
+    border-radius: 0 0 12px 12px;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+    border: 1px solid #e0e0e0;
+}
+
+.tab-content.active {
+    display: block;
+    animation: fadeIn 0.3s ease-in-out;
+}
+
+/* שיפורים כלליים בעיצוב */
+.container {
+    padding: 30px;
+    background: linear-gradient(to bottom, #ffffff, #f8f9fa);
+}
+
+.subjects-section {
+    background: linear-gradient(to right, #e3f2fd, #f8f9fa);
+    padding: 20px;
+    border-radius: 12px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+}
+
+.subject-select {
+    background: white;
+    border: 2px solid #1a237e;
+    transition: all 0.3s;
+}
+
+.subject-select:focus {
+    box-shadow: 0 0 0 2px rgba(26,35,126,0.2);
+}
+
+button {
+    position: relative;
+    overflow: hidden;
+    transition: all 0.3s;
+}
+
+button:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+}
+
+button:active {
+    transform: translateY(0);
+}
+
+/* אנימציות */
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+/* עיצוב טבלאות משופר */
+.lessons-table {
+    background: white;
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+}
+
+.lessons-table th {
+    background: linear-gradient(45deg, #1a237e, #283593);
+    color: white;
+    padding: 15px;
+}
+
+.lessons-table input[type="number"] {
+    border: 2px solid #e0e0e0;
+    border-radius: 8px;
+    transition: all 0.3s;
+}
+
+.lessons-table input[type="number"]:focus {
+    border-color: #1a237e;
+    box-shadow: 0 0 0 2px rgba(26,35,126,0.2);
+}
+
+/* עיצוב תכנון משופר */
+.planning-summary {
+    background: linear-gradient(45deg, #e3f2fd, #bbdefb);
+}
+
+.planning-summary > div {
+    transition: all 0.3s;
+}
+
+.planning-summary > div:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 6px 12px rgba(0,0,0,0.1);
+}
+
+/* עיצוב נושאים משופר */
+.topic-container {
+    transition: all 0.3s;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+}
+
+.topic-container:hover {
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+}
+
+/* עיצוב הודעות שגיאה */
+#error {
+    transition: all 0.3s;
+    animation: slideIn 0.3s ease-in-out;
+}
+
+@keyframes slideIn {
+    from { transform: translateY(-20px); opacity: 0; }
+    to { transform: translateY(0); opacity: 1; }
+}
+
+/* עיצוב תפריטים נפתחים */
+.dropdown-content {
+    border-radius: 12px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    animation: fadeIn 0.2s ease-in-out;
+}
+
+/* תצוגה מותאמת למסכים קטנים */
+@media (max-width: 768px) {
+    .tab-buttons {
+        flex-direction: column;
+    }
+
+    .tab-button {
+        border-radius: 8px;
+        margin-bottom: 5px;
+    }
+
+    .planning-summary {
+        grid-template-columns: 1fr;
+    }
+}
+       .planning-section {
+           margin-top: 20px;
+       }
+       .planning-summary {
+           display: grid;
+           grid-template-columns: repeat(3, 1fr);
+           gap: 20px;
+           margin-bottom: 20px;
+           background-color: #e3f2fd;
+           padding: 15px;
+           border-radius: 8px;
+       }
+       .planning-summary > div {
+           text-align: center;
+           padding: 10px;
+           background: white;
+           border-radius: 6px;
+           box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+       }
+
+       /* Topic styles */
+       .topic-container {
+           border: 1px solid #e0e0e0;
+           padding: 15px;
+           margin-bottom: 15px;
+           border-radius: 8px;
+           background-color: white;
+       }
+       .topic-header {
+           display: flex;
+           gap: 10px;
+           align-items: center;
+           margin-bottom: 15px;
+       }
+       .subtopics-container {
+     margin-right: 20px;
+     border-right: 2px solid #e0e0e0;
+     padding: 10px;
+ }
+ .subtopic-row {
+display: flex;
+align-items: center;
+gap: 10px;
+margin-bottom: 10px;
+padding: 10px;
+background-color: #f8f9fa;
+border-radius: 4px;
+}
+.subtopic-content {
+    display: flex;
+    align-items: center;
+    width: 100%;
+    gap: 10px;
+}
+
+.subtopic-input {
+    width: 20%;
+    padding: 8px;
+    border: 1px solid #e0e0e0;
+    border-radius: 4px;
+    text-align: center;
+}
+.subtopic-notes {
+    width: 65%;
+    padding: 8px;
+    border: 1px solid #e0e0e0;
+    border-radius: 4px;
+    resize: vertical;
+    min-height: 36px;
+    text-align: center;
+}
+.subtopic-lessons {
+    width: 15%;
+    padding: 8px;
+    border: 1px solid #e0e0e0;
+    border-radius: 4px;
+    text-align: center;
+}
+.remove-btn {
+    padding: 4px 8px;
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-size: 16px;
+    color: #d32f2f;
+    transition: color 0.2s;
+}
+.remove-btn:hover {
+    color: #b71c1c;
+}
+       /* Status styles */
+       .learning-day {
+         position: relative !important;
+         background-color: #e3f2fd !important; /* כחול בהיר ליום עם שיעורים מובנים */
+     }
+
+
+ .non-learning-day {
+     background-color: #ffe0b2 !important; /* כתום בהיר ליום ללא לימודים */
+     color: #d32f2f;
+ }
+ .potential-learning-day {
+     background-color: #fff9c4 !important; /* צהוב בהיר ליום לימודים ללא שיעורים מובנים */
+     position: relative !important;
+ }
+       /* Dropdown styles */
+       .dropdown {
+           position: relative;
+           display: inline-block;
+       }
+       .dropdown-content {
+           display: none;
+           position: absolute;
+           background-color: white;
+           min-width: 160px;
+           box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+           border-radius: 8px;
+           z-index: 1000;
+           top: 100%;
+           right: 0;
+       }
+       .dropdown-content a {
+           color: #1a237e;
+           padding: 12px 16px;
+           text-decoration: none;
+           display: block;
+           cursor: pointer;
+       }
+       .dropdown-content a:hover {
+           background-color: #f8f9fa;
+           border-radius: 8px;
+       }
+       .subject-controls {
+    display: flex;
+    justify-content: center;
+    gap: 12px;
+    align-items: center;
+    margin-bottom: 10px;
+    flex-wrap: wrap;  /* מאפשר שבירת שורה במסכים קטנים */
+    padding: 10px;
+}
+
+.subject-select {
+    min-width: 250px;  /* קצת יותר רחב */
+}
+
+/* עיצוב מיוחד לכפתורי הייצוא וההדפסה */
+.subject-controls .dropdown button {
+    background-color: #283593;  /* צבע קצת שונה להבדלה */
+    font-size: 0.95em;
+    padding: 10px 20px;
+}
+
+.subject-controls .dropdown button:hover {
+    background-color: #1a237e;
+}
+
+/* התאמה למסכים קטנים */
+@media (max-width: 768px) {
+    .subject-controls {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .subject-select {
+        width: 100%;
+    }
+
+    .subject-controls button,
+    .subject-controls .dropdown {
+        width: 100%;
+    }
+}
+
+       /* Messages */
+       #error {
+           display: none;
+           color: #d32f2f;
+           text-align: center;
+           margin: 10px 0;
+           padding: 15px;
+           background-color: #ffebee;
+           border-radius: 8px;
+       }
+       .total-days {
+           margin-top: 20px;
+           text-align: center;
+           font-size: 1.2em;
+           color: #1a237e;
+           font-weight: bold;
+           padding: 10px;
+           background-color: #e3f2fd;
+           border-radius: 8px;
+       }
+       /* Lesson management styles */
+       const additionalStyles = `
+.cancel-lesson-btn {
+    position: absolute;
+    top: 4px;
+    right: 4px;
+    background-color: #ef5350;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    padding: 2px 6px;
+    cursor: pointer;
+    opacity: 0;
+    transition: opacity 0.2s;
+}
+
+.lesson-cell:hover .cancel-lesson-btn {
+    opacity: 1;
+}
+
+.added-lesson {
+    border: 2px solid #4caf50;
+    background-color: #e8f5e9;
+}
+`;
+.cancelled-lesson {
+    background-color: #ffebee !important;
+    position: relative;
+}
+
+.cancelled-lesson::after {
+    content: 'בוטל';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background-color: #ef5350;
+    color: white;
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-size: 12px;
+    z-index: 1;
+}
+
+.added-lesson {
+    background-color: #e8f5e9 !important;
+    border: 2px solid #4caf50;
+}
+.lesson-cell {
+    position: relative;
+    padding: 8px;
+    margin: 4px 0;
+    border: 1px solid #e0e0e0;
+    border-radius: 4px;
+    background-color: white;
+}
+.cancelled-day {
+    background-color: #ffebee !important;
+}
+
+.cancelled-day::after {
+    content: 'יום מבוטל';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background-color: #ef5350;
+    color: white;
+    padding: 4px 12px;
+    border-radius: 4px;
+    font-size: 14px;
+    z-index: 2;
+}
+
+.lesson-cell .cancel-lesson-btn {
+    background-color: #ef5350;
+}
+
+.cancelled-lesson .cancel-lesson-btn {
+    background-color: #4caf50;
+}
+
+.lesson-cell.cancelled-lesson {
+    background-color: #ffebee;
+    opacity: 0.7;
+}
+
+.lesson-cell.cancelled-lesson::after {
+    content: 'בוטל';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background-color: #ef5350;
+    color: white;
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-size: 12px;
+    z-index: 1;
+}
+
+.cancel-lesson-btn {
+    position: absolute;
+    top: 4px;
+    right: 4px;
+    padding: 2px 6px;
+    background-color: #ef5350;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    opacity: 0;
+    transition: opacity 0.2s;
+}
+
+.lesson-cell:hover .cancel-lesson-btn {
+    opacity: 1;
+}
+.lesson-actions {
+    position: absolute;
+    top: 5px;
+    right: 5px;
+    display: flex;
+    gap: 4px;
+    opacity: 0;
+    transition: opacity 0.2s;
+    z-index: 100;
+}
+
+.learning-day:hover .lesson-actions {
+    opacity: 1;
+}
+.learning-day:hover .lesson-actions,
+.potential-learning-day:hover .lesson-actions {
+    opacity: 1;
+}
+.action-button {
+    padding: 4px 8px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 12px;
+    color: white;
+    background-color: #ef5350;
+    transition: all 0.2s;
+}
+
+.action-button:hover {
+    transform: scale(1.1);
+}
+
+.action-button.cancel-day {
+    background-color: #d32f2f;
+}
+/* הוספה לתוך תגית style */
+.learning-day {
+    position: relative !important;  /* חשוב להוסיף !important */
+}
+
+.lesson-actions {
+    position: absolute;
+    top: 5px;
+    right: 5px;
+    display: flex;
+    gap: 4px;
+    opacity: 0;
+    transition: opacity 0.2s;
+    z-index: 100;
+}
+
+.learning-day:hover .lesson-actions {
+    opacity: 1;
+}
+
+.action-button {
+    padding: 4px 8px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 12px;
+    color: white;
+    background-color: #ef5350;
+    transition: all 0.2s;
+    min-width: 24px;
+    height: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.action-button:hover {
+    transform: scale(1.1);
+}
+
+.action-button.cancel-day {
+    background-color: #d32f2f;
+}
+.cancelled-lesson {
+    position: relative;
+    opacity: 0.7;
+    background-color: #ffebee;
+}
+
+.cancelled-lesson::after {
+    content: 'בוטל';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background-color: #ef5350;
+    color: white;
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-size: 12px;
+    z-index: 1;
+}
+
+.cancelled-day {
+    background-color: #ffebee !important;
+    position: relative;
+}
+
+.cancelled-day::after {
+    content: 'יום מבוטל';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background-color: #d32f2f;
+    color: white;
+    padding: 4px 12px;
+    border-radius: 4px;
+    font-size: 14px;
+    z-index: 1;
+}
+.action-button {
+    padding: 2px 6px;
+    font-size: 16px;
+    min-width: 24px;
+    height: 24px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    transition: all 0.2s;
+}
+
+.action-button:hover {
+    transform: scale(1.1);
+}
+
+.cancel-btn {
+    background-color: #ef5350;
+}
+
+.add-btn {
+    background-color: #4caf50;
+}
+.cancelled-lesson {
+    opacity: 0.7;
+    background-color: #ffebee !important;
+    position: relative;
+}
+
+.cancelled-lesson::after {
+    content: 'בוטל';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background-color: #ef5350;
+    color: white;
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-size: 12px;
+    z-index: 1;
+}
+
+.cancelled-day {
+    background-color: #ffebee !important;
+    position: relative;
+}
+
+.cancelled-day::after {
+    content: 'יום מבוטל';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background-color: #d32f2f;
+    color: white;
+    padding: 4px 12px;
+    border-radius: 4px;
+    font-size: 14px;
+    z-index: 1;
+}
+.lesson-cell {
+    position: relative;
+    margin: 4px 0;
+    padding: 8px;
+    border: 1px solid #e0e0e0;
+    border-radius: 4px;
+    background-color: white;
+}
+
+.cancel-lesson-btn {
+    position: absolute;
+    top: 4px;
+    right: 4px;
+    background-color: #ef5350;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    padding: 2px 6px;
+    cursor: pointer;
+    opacity: 0;
+    transition: opacity 0.2s;
+    z-index: 2;
+}
+
+.lesson-cell:hover .cancel-lesson-btn {
+    opacity: 1;
+}
+
+.cancelled-lesson .cancel-lesson-btn {
+    background-color: #4caf50;
+}
+.lesson-cell {
+    position: relative;
+    margin: 4px 0;
+    padding: 8px;
+    border: 1px solid #e0e0e0;
+    border-radius: 4px;
+    background-color: white;
+}
+.cancelled-lesson {
+    background-color: #ffebee !important;
+    position: relative;
+}
+
+.cancelled-lesson::after {
+    content: 'בוטל';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background-color: #ef5350;
+    color: white;
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-size: 12px;
+    z-index: 1;
+}
+
+.added-lesson {
+    background-color: #e8f5e9 !important;
+    border: 2px solid #4caf50;
+}
+const deleteButtonStyle = `
+.delete-btn {
+    background-color: #d32f2f;
+    color: white;
+}
+
+.delete-btn:hover {
+    background-color: #b71c1c;
+}`;
+/* Status styles */
+td.learning-day {
+    position: relative !important;
+    background-color: #e3f2fd !important; /* כחול בהיר - יש שיעורים */
+}
+
+td.potential-learning-day {
+    position: relative !important;
+    background-color: #fff9c4 !important; /* צהוב בהיר - יום לימודים ללא שיעורים */
+}
+
+td.non-learning-day {
+    position: relative !important;
+    background-color: #ffe0b2 !important; /* כתום בהיר - לא יום לימודים */
+}
+   </style>
+</head>
+<body>
+   <div class="container">
+       <h1>לוח שיעורים שנתי</h1>
+
+       <!-- בחירת מקצוע -->
+<div class="subjects-section">
+  <div class="subject-controls">
+    <select id="subjectSelect" class="subject-select" onchange="handleSubjectChange()">
+        <option value="">בחר מקצוע</option>
+    </select>
+
+    <button onclick="toggleAddSubjectForm()">הוסף מקצוע</button>
+    <button onclick="deleteCurrentSubject()" class="delete-btn">מחק מקצוע</button>
+
+        <!-- העברת כפתורי הייצוא וההדפסה -->
+        <div class="dropdown">
+        <button onclick="toggleExportMenu()">ייצוא ⌄</button>
+        <div id="exportMenu" class="dropdown-content">
+            <a onclick="handleExportClick('planning')">ייצוא תכנון</a>
+            <a onclick="handleExportClick('schedule')">ייצוא לוז</a>
+            <a onclick="handleExportClick('all')">ייצוא הכל</a>
+        </div>
+    </div>
+    <div class="dropdown">
+        <button onclick="toggleWhatsAppMenu()">שלח בווטסאפ ⌄</button>
+        <div id="whatsappMenu" class="dropdown-content">
+            <a onclick="sendToWhatsApp('planning')">שלח תכנון</a>
+            <a onclick="sendToWhatsApp('schedule')">שלח לוז</a>
+            <a onclick="sendToWhatsApp('all')">שלח הכל</a>
+        </div>
+    </div>
+        <div class="dropdown">
+            <button onclick="togglePrintMenu()">הדפסה ⌄</button>
+            <div id="printMenu" class="dropdown-content">
+                <a onclick="printContent('planning')">הדפס תכנון</a>
+                <a onclick="printContent('schedule')">הדפס לוז</a>
+                <a onclick="printContent('all')">הדפס הכל</a>
+            </div>
+        </div>
+        <input type="file" id="csvFileInput" accept=".csv" style="display: none" onchange="importFromCSV(this.files[0])">
+        <button onclick="document.getElementById('csvFileInput').click()">ייבא תכנון</button>
+    </div>
+    <div id="addSubjectForm">
+        <input type="text" id="newSubjectInput" placeholder="שם המקצוע">
+        <button onclick="addNewSubject()">שמור מקצוע</button>
+    </div>
+    <div id="currentSubject"></div>
+</div>
+
+       <!-- כרטיסיות -->
+       <div class="tabs">
+           <div class="tab-buttons">
+               <button class="tab-button active" onclick="switchTab(event, 'schedule-tab')">לוז שיעורים</button>
+               <button class="tab-button" onclick="switchTab(event, 'planning-tab')">תכנון למידה</button>
+               <button class="tab-button" onclick="switchTab(event, 'timetable-tab')">מערכת שעות</button>
+           </div>
+
+           <!-- כרטיסיית לוז -->
+           <div id="schedule-tab" class="tab-content active">
+               <div class="input-group">
+                   <div>
+                       <label>שנת לימודים:</label>
+                       <select id="schoolYear" onchange="updateDates()"></select>
+                   </div>
+                   <div>
+                       <label>מתאריך:</label>
+                       <input type="date" id="startDate" onchange="handleDateChange()">
+                   </div>
+                   <div>
+                       <label>עד תאריך:</label>
+                       <input type="date" id="endDate" onchange="handleDateChange()">
+                   </div>
+               </div>
+               <div id="tableContainer"></div>
+               <div id="totalDays" class="total-days"></div>
+           </div>
+
+           <!-- כרטיסיית תכנון -->
+           <div id="planning-tab" class="tab-content">
+               <div class="planning-summary">
+                   <div>
+                       <div id="totalLessonsValue">0</div>
+                       <div>סה"כ שיעורים בתקופה</div>
+                   </div>
+                   <div>
+                       <div id="plannedLessonsValue">0</div>
+                       <div>שיעורים מתוכננים</div>
+                   </div>
+                   <div>
+                       <div id="remainingLessonsValue">0</div>
+                       <div>יתרת שיעורים</div>
+                   </div>
+               </div>
+               <div class="planning-buttons">
+     <button onclick="addNewTopic()">הוסף נושא</button>
+     <button onclick="validateAndPlan()">תכנן לוז</button>
+ </div>
+               <div id="planningContainer"></div>
+           </div>
+
+           <!-- כרטיסיית מערכת -->
+           <div id="timetable-tab" class="tab-content">
+               <h2>מערכת שיעורים שבועית</h2>
+               <table class="lessons-table">
+                   <thead>
+                       <tr>
+                           <th>ראשון</th>
+                           <th>שני</th>
+                           <th>שלישי</th>
+                           <th>רביעי</th>
+                           <th>חמישי</th>
+                           <th>שישי</th>
+                       </tr>
+                   </thead>
+                   <tbody>
+                       <tr>
+                           <td><input type="number" min="0" max="10" value="0" onchange="handleScheduleChange()"></td>
+                           <td><input type="number" min="0" max="10" value="0" onchange="handleScheduleChange()"></td>
+                           <td><input type="number" min="0" max="10" value="0" onchange="handleScheduleChange()"></td>
+                           <td><input type="number" min="0" max="10" value="0" onchange="handleScheduleChange()"></td>
+                           <td><input type="number" min="0" max="10" value="0" onchange="handleScheduleChange()"></td>
+                           <td><input type="number" min="0" max="10" value="0" onchange="handleScheduleChange()"></td>
+                       </tr>
+                   </tbody>
+               </table>
+           </div>
+       </div>
+
+       <div id="error"></div>
+   </div>
+
+<script>
+// === Tab Functions ===
+// עדכון פונקציית switchTab
+function switchTab(event, tabId) {
+   document.querySelectorAll('.tab-button').forEach(button => {
+       button.classList.remove('active');
+   });
+   document.querySelectorAll('.tab-content').forEach(content => {
+       content.classList.remove('active');
+   });
+
+   event.currentTarget.classList.add('active');
+   document.getElementById(tabId).classList.add('active');
+
+   // אם זו כרטיסיית הלוז, נרענן את הטבלה
+   if (tabId === 'schedule-tab') {
+       generateTable();
+   }
+}
+// === Global Variables ===
+let subjects = new Map();
+let currentSubject = null;
+let lessonChanges = {
+    cancelled: [],
+    added: []
+};
+const weekDaysDisplay = {
+    days: ['ראשון', 'שני', 'שלישי', 'רביעי', 'חמישי', 'שישי'],
+    statusClass: status => status ? 'learning-day' : 'non-learning-day'
+};
+
+const HEBREW_MONTHS = {
+    'Tishrei': 'תשרי',
+    'Cheshvan': 'חשון',
+    'Kislev': 'כסלו',
+    'Tevet': 'טבת',
+    'Shevat': 'שבט',
+    'Adar': 'אדר',
+    'Adar I': 'אדר א',
+    'Adar II': 'אדר ב',
+    'Nisan': 'ניסן',
+    'Iyyar': 'אייר',
+    'Sivan': 'סיון',
+    'Tamuz': 'תמוז',
+    'Av': 'אב',
+    'Elul': 'אלול'
+};
+
+// === Helper Functions ===
+function showError(message) {
+    const error = document.getElementById('error');
+    error.textContent = message;
+    error.style.display = 'block';
+    setTimeout(() => error.style.display = 'none', 3000);
+}
+
+function formatDate(date) {
+    return date.toISOString().split('T')[0];
+}async function printContent(type = 'all') {
+    if (!currentSubject) {
+        showError('יש לבחור מקצוע תחילה');
+        return;
+    }
+
+    // יצירת חלון הדפסה חדש
+    const printWindow = window.open('', '_blank');
+
+    // הכנת תוכן להדפסה
+    let content = `
+        <html dir="rtl">
+        <head>
+            <title>הדפסת ${currentSubject.name}</title>
+            <style>
+                body {
+                    font-family: Arial, sans-serif;
+                    padding: 20px;
+                }
+                .print-header {
+                    text-align: center;
+                    margin-bottom: 20px;
+                }
+                .print-header h1 {
+                    color: #1a237e;
+                    margin-bottom: 10px;
+                }
+                .print-header h2 {
+                    color: #666;
+                    font-size: 16px;
+                }
+                table {
+                    width: 100%;
+                    border-collapse: collapse;
+                    margin: 20px 0;
+                }
+                th, td {
+                    border: 1px solid #ccc;
+                    padding: 8px;
+                    text-align: right;
+                }
+                th {
+                    background-color: #e3f2fd;
+                }
+                .topic-title {
+                    font-weight: bold;
+                    color: #1a237e;
+                }
+                .subtopic {
+                    padding-right: 20px;
+                }
+                .lesson-cell {
+                    margin: 5px 0;
+                    padding: 5px;
+                    border-bottom: 1px solid #eee;
+                }
+                .page-break {
+                    page-break-before: always;
+                }
+                @media print {
+                    .no-print {
+                        display: none;
+                    }
+                }
+            </style>
+        </head>
+        <body>
+            <div class="print-header">
+                <h1>${currentSubject.name}</h1>
+                <h2>נוצר בתאריך: ${new Date().toLocaleDateString('he-IL')}</h2>
+            </div>
+    `;
+
+    // הוספת תכנון
+    if (type === 'planning' || type === 'all') {
+        content += `
+            <h2>תכנון שיעורים</h2>
+            <table>
+                <thead>
+                    <tr>
+                        <th>נושא</th>
+                        <th>תת נושא</th>
+                        <th>מספר שיעורים</th>
+                        <th>הערות</th>
+                    </tr>
+                </thead>
+                <tbody>
+        `;
+
+        const topics = getTopicsData();
+        topics.forEach(topic => {
+            topic.subtopics.forEach((subtopic, index) => {
+                content += `
+                    <tr>
+                        <td>${index === 0 ? topic.title : ''}</td>
+                        <td>${subtopic.title}</td>
+                        <td>${subtopic.lessons}</td>
+                        <td>${subtopic.notes || ''}</td>
+                    </tr>
+                `;
+            });
+        });
+
+        content += '</tbody></table>';
+    }
+
+    // הוספת לוז
+
+
+    content += `
+        </body></html>
+    `;
+
+    // כתיבת התוכן לחלון ההדפסה
+    printWindow.document.write(content);
+    printWindow.document.close();
+
+    // הדפסה
+    setTimeout(() => {
+        printWindow.print();
+        printWindow.close();
+    }, 250);
+}
+// ראשית נעדכן את ה-HTML בחלק של הכפתורים:
+/*
+<div class="dropdown">
+    <button onclick="toggleWhatsAppMenu()">שלח בווטסאפ ⌄</button>
+    <div id="whatsappMenu" class="dropdown-content">
+        <a onclick="sendToWhatsApp('planning')">שלח תכנון</a>
+        <a onclick="sendToWhatsApp('schedule')">שלח לוז</a>
+        <a onclick="sendToWhatsApp('all')">שלח הכל</a>
+    </div>
+</div>
+*/
+
+// נוסיף את הפונקציות החדשות:
+function toggleWhatsAppMenu() {
+    const menu = document.getElementById('whatsappMenu');
+    // סגירת תפריטים אחרים
+    document.getElementById('exportMenu').style.display = 'none';
+    document.getElementById('printMenu').style.display = 'none';
+    // הצגת תפריט ווטסאפ
+    menu.style.display = menu.style.display === 'block' ? 'none' : 'block';
+}
+
+async function sendToWhatsApp(type) {
+    if (!currentSubject) {
+        showError('יש לבחור מקצוע תחילה');
+        return;
+    }
+
+    // סגירת התפריט
+    document.getElementById('whatsappMenu').style.display = 'none';
+
+    // בקשת מספר טלפון
+    let phoneNumber = prompt('הכנס מספר טלפון לשליחה (לדוגמה: 0501234567):');
+    if (!phoneNumber) return;
+
+    // ניקוי המספר מתווים מיוחדים
+    phoneNumber = phoneNumber.replace(/[^0-9]/g, '');
+
+    // בדיקת תקינות המספר
+    if (phoneNumber.length !== 10 || !phoneNumber.startsWith('05')) {
+        showError('מספר טלפון לא תקין');
+        return;
+    }
+
+    // המרת המספר לפורמט בינלאומי
+    phoneNumber = '972' + phoneNumber.substring(1);
+
+    // יצירת הודעה לפי סוג התוכן
+    let message = `מצורף `;
+    switch(type) {
+        case 'planning':
+            message += `תכנון למקצוע ${currentSubject.name}`;
+            break;
+        case 'schedule':
+            message += `לוז למקצוע ${currentSubject.name}`;
+            break;
+        case 'all':
+            message += `תכנון ולוז למקצוע ${currentSubject.name}`;
+            break;
+    }
+
+    // הוספת תאריכים
+    const startDate = document.getElementById('startDate').value;
+    const endDate = document.getElementById('endDate').value;
+    if (startDate && endDate) {
+        const formattedStartDate = new Date(startDate).toLocaleDateString('he-IL');
+        const formattedEndDate = new Date(endDate).toLocaleDateString('he-IL');
+        message += ` לתקופה ${formattedStartDate} - ${formattedEndDate}`;
+    }
+
+    // פתיחת ווטסאפ ווב
+    const whatsappUrl = `https://web.whatsapp.com/send?phone=${phoneNumber}&text=${encodeURIComponent(message)}`;
+    window.open(whatsappUrl, '_blank');
+}
+function parseDate(dateStr) {
+    dateStr = dateStr.trim();
+    const parts = dateStr.split('/');
+    if (parts.length === 3) {
+        const [day, month, year] = parts;
+        return new Date(year, month - 1, day);
+    }
+    return new Date(dateStr);
+}
+function printContent(type = 'all') {
+    if (!currentSubject) {
+        showError('יש לבחור מקצוע תחילה');
+        return;
+    }
+
+    // יצירת חלון הדפסה חדש
+    const printWindow = window.open('', '_blank');
+
+    // הכנת תוכן להדפסה
+    let content = `
+        <html dir="rtl">
+        <head>
+            <title>הדפסת ${currentSubject.name}</title>
+            <style>
+                body {
+                    font-family: Arial, sans-serif;
+                    padding: 20px;
+                }
+                .print-header {
+                    text-align: center;
+                    margin-bottom: 20px;
+                }
+                .print-header h1 {
+                    color: #1a237e;
+                    margin-bottom: 10px;
+                }
+                .print-header h2 {
+                    color: #666;
+                    font-size: 16px;
+                }
+                table {
+                    width: 100%;
+                    border-collapse: collapse;
+                    margin: 20px 0;
+                }
+                th, td {
+                    border: 1px solid #ccc;
+                    padding: 8px;
+                    text-align: right;
+                }
+                th {
+                    background-color: #e3f2fd;
+                }
+                .topic-title {
+                    font-weight: bold;
+                    color: #1a237e;
+                }
+                .subtopic {
+                    padding-right: 20px;
+                }
+                .lesson-cell {
+                    margin: 5px 0;
+                    padding: 5px;
+                    border-bottom: 1px solid #eee;
+                }
+                .page-break {
+                    page-break-before: always;
+                }
+                @media print {
+                    .no-print {
+                        display: none;
+                    }
+                }
+            </style>
+        </head>
+        <body>
+            <div class="print-header">
+                <h1>${currentSubject.name}</h1>
+                <h2>נוצר בתאריך: ${new Date().toLocaleDateString('he-IL')}</h2>
+            </div>
+    `;
+
+    // הוספת תכנון
+    if (type === 'planning' || type === 'all') {
+        content += `
+            <h2>תכנון שיעורים</h2>
+            <table>
+                <thead>
+                    <tr>
+                        <th>נושא</th>
+                        <th>תת נושא</th>
+                        <th>מספר שיעורים</th>
+                        <th>הערות</th>
+                    </tr>
+                </thead>
+                <tbody>
+        `;
+
+        const topics = getTopicsData();
+        topics.forEach(topic => {
+            topic.subtopics.forEach((subtopic, index) => {
+                content += `
+                    <tr>
+                        <td>${index === 0 ? topic.title : ''}</td>
+                        <td>${subtopic.title}</td>
+                        <td>${subtopic.lessons}</td>
+                        <td>${subtopic.notes || ''}</td>
+                    </tr>
+                `;
+            });
+        });
+
+        content += '</tbody></table>';
+    }
+
+    // הוספת לוז
+    if (type === 'schedule' || type === 'all') {
+        content += type === 'all' ? '<div class="page-break"></div>' : '';
+        content += `
+            <h2>לוח שיעורים</h2>
+            <table>
+                <thead>
+                    <tr>
+                        <th>תאריך</th>
+                        <th>יום</th>
+                        <th>שיעורים</th>
+                    </tr>
+                </thead>
+                <tbody>
+        `;
+
+        document.querySelectorAll('.main-table tbody tr').forEach(row => {
+            const firstDateCell = row.querySelector('.date-cell');
+            if (!firstDateCell) return;
+
+            const hebrewDate = firstDateCell.querySelector('.hebrew-date')?.textContent || '';
+            const gregDate = firstDateCell.querySelector('.gregorian-date')?.textContent || '';
+
+            row.querySelectorAll('td').forEach((cell, index) => {
+                if (index > 1 && index < 8) { // רק תאי ימים
+                    const lessons = cell.querySelectorAll('.lesson-cell');
+                    if (lessons.length && !cell.classList.contains('cancelled-day')) {
+                        content += `
+                            <tr>
+                                <td>השבוע שמתחיל ב: ${hebrewDate} ${gregDate}</td>
+                                <td>${weekDaysDisplay.days[index-2]}</td>
+                                <td>
+                                    ${Array.from(lessons).map(lesson => {
+                                        if (!lesson.classList.contains('cancelled-lesson')) {
+                                            return `
+                                                <div class="lesson-cell">
+                                                    <div class="lesson-topic">${lesson.querySelector('.lesson-topic')?.textContent || ''}</div>
+                                                    <div class="lesson-subtopic">${lesson.querySelector('.lesson-subtopic')?.textContent || ''}</div>
+                                                </div>
+                                            `;
+                                        }
+                                        return '';
+                                    }).join('')}
+                                </td>
+                            </tr>
+                        `;
+                    }
+                }
+            });
+        });
+
+        content += '</tbody></table>';
+    }
+
+    content += `
+        </body></html>
+    `;
+
+    // כתיבת התוכן לחלון ההדפסה
+    printWindow.document.write(content);
+    printWindow.document.close();
+
+    // הדפסה
+    setTimeout(() => {
+        printWindow.print();
+        printWindow.close();
+    }, 250);
+}
+
+function parseDate(dateStr) {
+    dateStr = dateStr.trim();
+    const parts = dateStr.split('/');
+    if (parts.length === 3) {
+        const [day, month, year] = parts;
+        return new Date(year, month - 1, day);
+    }
+    return new Date(dateStr);
+}
+// פונקציה חדשה לקבלת התאריך הספציפי של יום בשבוע
+function getDayDate(row, dayIndex) {
+    // קבלת תאריך תחילת השבוע מהשורה
+    const startDateCell = row.querySelector('.gregorian-date');
+    if (!startDateCell) return null;
+
+    const startDate = new Date(startDateCell.textContent);
+    if (isNaN(startDate.getTime())) return null;
+
+    // חישוב התאריך הספציפי של היום
+    const dayDate = new Date(startDate);
+    dayDate.setDate(startDate.getDate() + dayIndex);
+
+    return dayDate;
+}
+// הוסף את זה עם שאר פונקציות העזר
+
+// פונקציה לפורמט תאריך להדפסה
+
+function formatDateForPrint(date) {
+    if (!date) return '';
+    try {
+        const options = {
+            year: 'numeric',
+            month: 'long',
+            day: 'numeric'
+        };
+        return date.toLocaleDateString('he-IL', options);
+    } catch (error) {
+        console.error('Error formatting date:', error);
+        return '';
+    }
+}
+function deleteCurrentSubject() {
+    if (!currentSubject) {
+        showError('יש לבחור מקצוע תחילה');
+        return;
+    }
+
+    const subjectName = currentSubject.name;  // שומר את השם לפני המחיקה
+
+    if (confirm(`האם אתה בטוח שברצונך למחוק את המקצוע "${subjectName}"? פעולה זו אינה ניתנת לביטול`)) {
+        try {
+            // מחיקה מה-Map
+            subjects.delete(subjectName);
+
+            // שמירה בלוקל סטורג'
+            localStorage.setItem('subjects', JSON.stringify(Object.fromEntries(subjects)));
+
+            // איפוס המקצוע הנוכחי
+            currentSubject = null;
+
+            // עדכון הממשק
+            document.getElementById('subjectSelect').value = '';
+            updateSubjectSelect();
+            resetInterface();
+
+            showError('המקצוע נמחק בהצלחה');
+        } catch (error) {
+            console.error('Error deleting subject:', error);
+            showError('אירעה שגיאה במחיקת המקצוע');
+        }
+    }
+}
+
+function toggleExportMenu() {
+    const menu = document.getElementById('exportMenu');
+    // Close print menu if open
+    document.getElementById('printMenu').style.display = 'none';
+    // Toggle export menu
+    menu.style.display = menu.style.display === 'block' ? 'none' : 'block';
+}
+
+// Add event listener to close menus when clicking outside
+document.addEventListener('click', function(event) {
+    const exportButton = event.target.closest('button');
+    const printButton = event.target.closest('button');
+
+    // If not clicking on export/print buttons or their menus
+    if (!exportButton && !printButton) {
+        // Close both menus
+        document.getElementById('exportMenu').style.display = 'none';
+        document.getElementById('printMenu').style.display = 'none';
+    }
+});
+
+// Function to handle export menu item clicks
+function handleExportClick(type) {
+    document.getElementById('exportMenu').style.display = 'none';
+    exportToCSV(type);
+}
+function togglePrintMenu() {
+    const menu = document.getElementById('printMenu');
+    menu.style.display = menu.style.display === 'block' ? 'none' : 'block';
+}
+
+// סגירת התפריט בלחיצה מחוץ אליו
+document.addEventListener('click', function(event) {
+    if (!event.target.matches('.dropdown button')) {
+        document.querySelectorAll('.dropdown-content').forEach(menu => {
+            menu.style.display = 'none';
+        });
+    }
+});
+async function loadSubjectData() {
+    if (!currentSubject) return;
+
+    initLessonChanges();
+
+    // טעינת מערכת שעות
+    const inputs = document.querySelectorAll('.lessons-table input');
+    currentSubject.lessonsPerDay.forEach((value, index) => {
+        if (inputs[index]) inputs[index].value = value;
+    });
+
+    // טעינת תאריכים
+    if (currentSubject.startDate) {
+        document.getElementById('startDate').value = currentSubject.startDate;
+    }
+    if (currentSubject.endDate) {
+        document.getElementById('endDate').value = currentSubject.endDate;
+    }
+
+    // טעינת נושאים
+    const container = document.getElementById('planningContainer');
+    if (!container) return;
+
+    // שינוי המבנה - כל הנושאים בcontainer אחד
+    container.innerHTML = '';  // ניקוי הcontainer
+
+    if (currentSubject.topics && currentSubject.topics.length > 0) {
+        currentSubject.topics.forEach(topic => {
+            const topicContainer = createNewTopic();
+            container.appendChild(topicContainer);
+
+            // מילוי פרטי הנושא
+            topicContainer.querySelector('.topic-title').value = topic.title;
+            topicContainer.querySelector('.topic-lessons').value = topic.lessons;
+
+            // מחיקת תת הנושא הדיפולטיבי
+            const subtopicsContainer = topicContainer.querySelector('.subtopics-container');
+            subtopicsContainer.innerHTML = '';
+
+            // הוספת תתי הנושאים
+            topic.subtopics.forEach(subtopic => {
+                const subtopicRow = createNewSubtopic(subtopicsContainer);
+                subtopicRow.querySelector('.subtopic-input').value = subtopic.title;
+                subtopicRow.querySelector('.subtopic-lessons').value = subtopic.lessons;
+                subtopicRow.querySelector('.subtopic-notes').value = subtopic.notes || '';
+                subtopicRow.dataset.empty = (!subtopic.title.trim()).toString();
+            });
+
+            // הכנסת הcontainer למצב מכווץ
+            subtopicsContainer.classList.remove('expanded');
+            topicContainer.querySelector('.expand-button').classList.remove('expanded');
+        });
+    }
+
+    // הוספת כפתור 'הוסף נושא' בסוף
+    const addTopicButton = document.createElement('div');
+    addTopicButton.className = 'add-topic-button-container';
+    addTopicButton.innerHTML = '<button onclick="addNewTopic()">הוסף נושא</button>';
+    container.appendChild(addTopicButton);
+
+    updateTotalLessons();
+    await generateTable();
+
+    // החזרת סימוני ביטול והוספה
+    if (currentSubject.lessonChanges) {
+        document.querySelectorAll('.learning-day').forEach(cell => {
+            const row = cell.closest('tr');
+            const dateCell = row.querySelector('.gregorian-date');
+            const date = dateCell ? dateCell.textContent : '';
+            const dayIndex = Array.from(row.children).indexOf(cell) - 2;
+
+            if (currentSubject.lessonChanges.cancelled?.some(id =>
+                id === getCellIdentifier(cell))) {
+                cell.classList.add('cancelled-lesson');
+                cell.dataset.lessons = "0";
+                const container = cell.querySelector('.lessons-container');
+                if (container) container.innerHTML = '';
+            }
+
+            if (currentSubject.lessonChanges.added?.some(id =>
+                id === getCellIdentifier(cell))) {
+                cell.classList.add('added-lesson');
+                const originalLessons = parseInt(cell.dataset.original_lessons) || 0;
+                cell.dataset.lessons = (originalLessons + 1).toString();
+            }
+        });
+    }
+
+    // תכנון מחדש אם יש נושאים
+    if (currentSubject.topics && currentSubject.topics.length > 0) {
+        await validateAndPlan();
+    }
+}
+// פונקציה לקבלת מזהה ייחודי לתא
+function getCellIdentifier(cell) {
+    const row = cell.closest('tr');
+    const dateCell = row.querySelector('.gregorian-date');
+    const date = dateCell ? dateCell.textContent : '';
+    const dayIndex = Array.from(cell.parentElement.children).indexOf(cell) - 2; // -2 for date columns
+    return `${date}_${dayIndex}`;
+}// מבנה נתונים מעודכן לשמירת שינויים
+// מבנה נתונים לשמירת שינויים
+function initLessonChanges() {
+    if (!currentSubject.lessonChanges) {
+        currentSubject.lessonChanges = {
+            cancelledLessons: [],  // {date, dayIndex, lessonIndex}
+            cancelledDays: [],     // {date, dayIndex}
+            added: []              // {date, dayIndex}
+        };
+    }
+
+    if (!Array.isArray(currentSubject.lessonChanges.cancelledLessons)) {
+        currentSubject.lessonChanges.cancelledLessons = [];
+    }
+    if (!Array.isArray(currentSubject.lessonChanges.cancelledDays)) {
+        currentSubject.lessonChanges.cancelledDays = [];
+    }
+    if (!Array.isArray(currentSubject.lessonChanges.added)) {
+        currentSubject.lessonChanges.added = [];
+    }
+}
+
+// פונקציה לחישוב מחדש של השיעורים הזמינים
+function recalculateAvailableLessons() {
+    let totalLessons = 0;
+    document.querySelectorAll('.learning-day').forEach(cell => {
+        const row = cell.closest('tr');
+        const dateCell = row.querySelector('.gregorian-date');
+        const date = dateCell ? dateCell.textContent : '';
+        const dayIndex = Array.from(row.children).indexOf(cell) - 2;
+
+        // בדיקה אם היום מבוטל
+        const isDayCancelled = currentSubject.lessonChanges.cancelledDays.some(d =>
+            d.date === date && d.dayIndex === dayIndex);
+
+        if (!isDayCancelled) {
+            const originalLessons = parseInt(cell.dataset.original_lessons) || 0;
+            const cancelledLessons = currentSubject.lessonChanges.cancelledLessons.filter(l =>
+                l.date === date && l.dayIndex === dayIndex).length;
+
+            totalLessons += originalLessons - cancelledLessons;
+        }
+    });
+
+    document.getElementById('totalLessonsValue').textContent = totalLessons;
+    updateTotalLessons();
+    return totalLessons;
+}
+
+function getLessonIdentifier(cell, lessonIndex) {
+    const row = cell.closest('tr');
+    const dateCell = row.querySelector('.gregorian-date');
+    const date = dateCell ? dateCell.textContent : '';
+    const dayIndex = Array.from(row.children).indexOf(cell) - 2; // -2 for date columns
+    return `${date}_${dayIndex}_${lessonIndex}`;
+}
+
+// פונקציה מעודכנת לביטול שיעור
+function cancelLesson(cell, lessonElement) {
+    if (!currentSubject) {
+        showError('יש לבחור מקצוע תחילה');
+        return;
+    }
+
+    initLessonChanges();
+
+    const row = cell.closest('tr');
+    const dateCell = row.querySelector('.gregorian-date');
+    const date = dateCell ? dateCell.textContent : '';
+    const dayIndex = Array.from(row.children).indexOf(cell) - 2;
+    const lessonIndex = Array.from(lessonElement.parentElement.children).indexOf(lessonElement);
+
+    const lessonId = {
+        date: date,
+        dayIndex: dayIndex,
+        lessonIndex: lessonIndex
+    };
+
+    // בדיקה אם השיעור כבר מבוטל
+    const existingIndex = currentSubject.lessonChanges.cancelledLessons.findIndex(l =>
+        l.date === lessonId.date &&
+        l.dayIndex === lessonId.dayIndex &&
+        l.lessonIndex === lessonIndex
+    );
+
+    if (existingIndex > -1) {
+        // החזרת שיעור
+        if (confirm('האם להחזיר שיעור זה?')) {
+            currentSubject.lessonChanges.cancelledLessons.splice(existingIndex, 1);
+            lessonElement.classList.remove('cancelled-lesson');
+            updateAfterChange();
+        }
+    } else {
+        // ביטול שיעור
+        if (confirm('האם לבטל שיעור זה?')) {
+            currentSubject.lessonChanges.cancelledLessons.push(lessonId);
+            lessonElement.classList.add('cancelled-lesson');
+            updateAfterChange();
+        }
+    }
+}
+
+// פונקציה מעודכנת לביטול יום
+function cancelDay(cell) {
+    if (!currentSubject) {
+        showError('יש לבחור מקצוע תחילה');
+        return;
+    }
+
+    initLessonChanges();
+
+    const row = cell.closest('tr');
+    const dateCell = row.querySelector('.gregorian-date');
+    const date = dateCell ? dateCell.textContent : '';
+    const dayIndex = Array.from(row.children).indexOf(cell) - 2;
+
+    const dayId = {
+        date: date,
+        dayIndex: dayIndex
+    };
+
+    // בדיקה אם היום כבר מבוטל
+    const existingIndex = currentSubject.lessonChanges.cancelledDays.findIndex(d =>
+        d.date === dayId.date && d.dayIndex === dayId.dayIndex
+    );
+
+    if (existingIndex > -1) {
+        // החזרת יום
+        if (confirm('האם להחזיר את היום?')) {
+            currentSubject.lessonChanges.cancelledDays.splice(existingIndex, 1);
+            cell.classList.remove('cancelled-day');
+            cell.querySelector('.lessons-container').innerHTML = '';
+            updateAfterChange();
+        }
+    } else {
+        // ביטול יום
+        if (confirm('האם לבטל את כל השיעורים ביום זה?')) {
+            currentSubject.lessonChanges.cancelledDays.push(dayId);
+            cell.classList.add('cancelled-day');
+            cell.querySelector('.lessons-container').innerHTML = '';
+            updateAfterChange();
+        }
+    }
+}
+
+// פונקציה לעדכון אחרי שינוי
+async function updateAfterChange() {
+    // שמירת השינויים
+    saveSubjectsToStorage();
+
+    // חישוב מחדש של שיעורים זמינים
+    recalculateAvailableLessons();
+
+    // תכנון מחדש של הלוז
+    await planLessons();
+
+    // עדכון התצוגה
+    await validateAndPlan();
+}
+// פונקציה לעדכון תצוגת השיעורים
+function updateLessonDisplay(cell) {
+    const lessons = cell.querySelectorAll('.lesson-cell');
+    const row = cell.closest('tr');
+    const date = row.querySelector('.gregorian-date').textContent;
+    const dayIndex = Array.from(row.children).indexOf(cell) - 2;
+
+    lessons.forEach((lesson, index) => {
+        const isCancelled = currentSubject.lessonChanges.cancelled.some(l =>
+            l.date === date &&
+            l.dayIndex === dayIndex &&
+            l.lessonIndex === index
+        );
+
+        if (isCancelled) {
+            lesson.classList.add('cancelled-lesson');
+        } else {
+            lesson.classList.remove('cancelled-lesson');
+        }
+    });
+}
+
+// פונקציה חדשה להוספת שיעור
+function addLesson(cell) {
+    if (!currentSubject) {
+        showError('יש לבחור מקצוע תחילה');
+        return;
+    }
+
+    if (cell.classList.contains('non-learning-day')) {
+        showError('לא ניתן להוסיף שיעור ביום ללא לימודים');
+        return;
+    }
+
+    if (confirm('האם להוסיף שיעור ליום זה?')) {
+        initLessonChanges();
+
+        const row = cell.closest('tr');
+        const dateCell = row.querySelector('.gregorian-date');
+        const date = dateCell ? dateCell.textContent : '';
+        const dayIndex = Array.from(row.children).indexOf(cell) - 2;
+
+        const lessonId = {
+            date: date,
+            dayIndex: dayIndex
+        };
+
+        // בדיקה אם כבר נוסף שיעור
+        if (!currentSubject.lessonChanges.added.some(a =>
+            a.date === lessonId.date && a.dayIndex === lessonId.dayIndex
+        )) {
+            currentSubject.lessonChanges.added.push(lessonId);
+
+            // עדכון מספר השיעורים
+            const currentLessons = parseInt(cell.dataset.lessons) || 0;
+            cell.dataset.lessons = (currentLessons + 1).toString();
+
+            // עדכון המראה
+            cell.classList.remove('potential-learning-day');
+            cell.classList.add('learning-day');
+            cell.classList.add('added-lesson');
+
+            if (!cell.querySelector('.lessons-container')) {
+                const container = document.createElement('div');
+                container.className = 'lessons-container';
+                cell.appendChild(container);
+            }
+
+            saveSubjectsToStorage();
+            validateAndPlan();
+        }
+    }
+}
+
+// עדכון generateTable - הוספת כפתורי פעולה
+// בתוך הלולאה שיוצרת את התאים ב-generateTable, עדכן את יצירת התא כך:
+function createTableCell(lessons) {
+    return `
+        <td class="${lessons > 0 ? 'learning-day' : 'non-learning-day'}"
+            data-lessons="${lessons}"
+            data-original-lessons="${lessons}">
+            ${lessons > 0 ? `
+                <div class="lesson-actions">
+                    <button class="action-button cancel-btn" title="בטל שיעור" onclick="event.stopPropagation(); cancelLesson(this.closest('td'))">⊖</button>
+                    <button class="action-button add-btn" title="הוסף שיעור" onclick="event.stopPropagation(); addLesson(this.closest('td'))">⊕</button>
+                </div>
+                <div class="lessons-container"></div>
+            ` : lessons}
+        </td>
+    `;
+}
+function formatLocalDate(date) {
+    return date.toLocaleDateString('he-IL', {
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric'
+    });
+}
+function handleTopicChange() {
+    if (!currentSubject) return;
+
+    currentSubject.topics = getTopicsData();
+    saveSubjectsToStorage();
+
+    updateTotalLessons();
+    updatePlanningSum();
+    validateAndPlan(); // קריאה לפונקציה המלאה
+}
+
+function validateAndPlan() {
+    if (!currentSubject) {
+        showError('יש לבחור מקצוע תחילה');
+        return;
+    }
+
+    const topics = getTopicsData();
+    if (!topics || topics.length === 0) {
+        // אם אין נושאים, ננקה את הלוז
+        clearSchedule();
+        return;
+    }
+
+    const totalPlanned = topics.reduce((sum, topic) => sum + topic.lessons, 0);
+    const totalAvailable = parseInt(document.getElementById('totalLessonsValue').textContent) || 0;
+
+    if (totalPlanned > totalAvailable) {
+        showError(`מספר השיעורים המתוכנן (${totalPlanned}) גדול ממספר השיעורים הזמינים (${totalAvailable})`);
+        return;
+    }
+
+    planLessons();
+}
+async function planLessons() {
+    if (!currentSubject) return;
+
+    const topics = getTopicsData();
+    if (!topics || topics.length === 0) {
+        clearSchedule();
+        return;
+    }
+
+    let currentTopicIndex = 0;
+    let currentSubtopicIndex = 0;
+    let lessonInCurrentSubtopic = 0;
+
+    const cells = document.querySelectorAll('.learning-day');
+    for (const cell of cells) {
+        const lessonsContainer = cell.querySelector('.lessons-container');
+        if (!lessonsContainer) continue;
+
+        const row = cell.closest('tr');
+        const dateCell = row.querySelector('.gregorian-date');
+        const date = dateCell ? dateCell.textContent : '';
+        const dayIndex = Array.from(row.children).indexOf(cell) - 2;
+
+        // בדיקה אם היום מבוטל
+        const isDayCancelled = currentSubject.lessonChanges?.cancelledDays?.some(d =>
+            d.date === date && d.dayIndex === dayIndex
+        );
+
+        if (isDayCancelled) {
+            cell.classList.add('cancelled-day');
+            lessonsContainer.innerHTML = '';
+            continue;
+        }
+
+        const lessonsInDay = parseInt(cell.dataset.lessons) || 0;
+        let cellContent = '';
+
+        for (let i = 0; i < lessonsInDay; i++) {
+            if (currentTopicIndex >= topics.length) break;
+
+            // בדיקה אם השיעור הספציפי מבוטל
+            const isLessonCancelled = currentSubject.lessonChanges?.cancelledLessons?.some(l =>
+                l.date === date &&
+                l.dayIndex === dayIndex &&
+                l.lessonIndex === i
+            );
+
+            if (isLessonCancelled) {
+                cellContent += `
+                    <div class="lesson-cell cancelled-lesson" data-lesson-index="${i}">
+                        <button class="cancel-lesson-btn" onclick="cancelLesson(this.closest('td'), this.closest('.lesson-cell'))">⊕</button>
+                    </div>
+                `;
+                continue;
+            }
+
+            const currentTopic = topics[currentTopicIndex];
+            if (!currentTopic?.subtopics || currentSubtopicIndex >= currentTopic.subtopics.length) {
+                currentTopicIndex++;
+                currentSubtopicIndex = 0;
+                lessonInCurrentSubtopic = 0;
+                if (currentTopicIndex >= topics.length) break;
+                continue;
+            }
+
+            const currentSubtopic = currentTopic.subtopics[currentSubtopicIndex];
+            lessonInCurrentSubtopic++;
+
+            cellContent += `
+                <div class="lesson-cell" data-lesson-index="${i}">
+                    <button class="cancel-lesson-btn" onclick="cancelLesson(this.closest('td'), this.closest('.lesson-cell'))">⊖</button>
+                    <div class="lesson-topic">${currentTopic.title}</div>
+                    <div class="lesson-subtopic">
+                        ${currentSubtopic.title} - שיעור ${lessonInCurrentSubtopic}
+                        ${currentSubtopic.notes ? `<div class="lesson-notes">${currentSubtopic.notes}</div>` : ''}
+                    </div>
+                </div>
+            `;
+
+            if (lessonInCurrentSubtopic >= currentSubtopic.lessons) {
+                currentSubtopicIndex++;
+                lessonInCurrentSubtopic = 0;
+                if (currentSubtopicIndex >= currentTopic.subtopics.length) {
+                    currentTopicIndex++;
+                    currentSubtopicIndex = 0;
+                }
+            }
+        }
+
+        lessonsContainer.innerHTML = cellContent;
+    }
+
+    // החלה מחדש של סימוני ביטול והוספה
+    cells.forEach(cell => {
+        const row = cell.closest('tr');
+        const dateCell = row.querySelector('.gregorian-date');
+        const date = dateCell ? dateCell.textContent : '';
+        const dayIndex = Array.from(row.children).indexOf(cell) - 2;
+
+        // סימון יום מבוטל
+        if (currentSubject.lessonChanges?.cancelledDays?.some(d =>
+            d.date === date && d.dayIndex === dayIndex)) {
+            cell.classList.add('cancelled-day');
+        }
+
+        // סימון שיעורים שנוספו
+        if (currentSubject.lessonChanges?.added?.some(a =>
+            a.date === date && a.dayIndex === dayIndex)) {
+            cell.classList.add('added-lesson');
+        }
+
+        // סימון שיעורים מבוטלים
+        const lessons = cell.querySelectorAll('.lesson-cell');
+        lessons.forEach((lesson, index) => {
+            if (currentSubject.lessonChanges?.cancelledLessons?.some(l =>
+                l.date === date &&
+                l.dayIndex === dayIndex &&
+                l.lessonIndex === index)) {
+                lesson.classList.add('cancelled-lesson');
+            }
+        });
+    });
+
+    saveSubjectsToStorage();
+}
+// פונקציה לאתחול מבנה הנתונים
+function initLessonChanges() {
+    if (!currentSubject.lessonChanges) {
+        currentSubject.lessonChanges = {
+            cancelledLessons: [],
+            cancelledDays: [],
+            added: []
+        };
+    }
+
+    // וודא שכל המערכים קיימים
+    if (!Array.isArray(currentSubject.lessonChanges.cancelledLessons)) {
+        currentSubject.lessonChanges.cancelledLessons = [];
+    }
+    if (!Array.isArray(currentSubject.lessonChanges.cancelledDays)) {
+        currentSubject.lessonChanges.cancelledDays = [];
+    }
+    if (!Array.isArray(currentSubject.lessonChanges.added)) {
+        currentSubject.lessonChanges.added = [];
+    }
+}
+
+// פונקציה חדשה לפתיחה וסגירה של תתי נושאים
+function toggleSubtopics(header) {
+    const container = header.nextElementSibling;
+    const button = header.querySelector('.expand-button');
+
+    if (container.classList.contains('expanded')) {
+        container.classList.remove('expanded');
+        button.classList.remove('expanded');
+    } else {
+        container.classList.add('expanded');
+        button.classList.add('expanded');
+    }
+}
+// === Topic and Subtopic Management ===
+function createNewTopic() {
+    const topicContainer = document.createElement('div');
+    topicContainer.className = 'topic-container';
+
+    topicContainer.innerHTML = `
+        <div class="topic-header" onclick="toggleSubtopics(this)">
+            <button class="expand-button">▶</button>
+            <input type="text" class="topic-title" placeholder="שם הנושא" onclick="event.stopPropagation()">
+            <input type="number" class="topic-lessons" min="1" value="1"
+                   onchange="updateTopicLessons(this)" onclick="event.stopPropagation()">
+            <button class="remove-btn" onclick="removeTopic(this)">❌</button>
+        </div>
+        <div class="subtopics-container">
+            <!-- תתי נושאים יתווספו כאן -->
+        </div>
+    `;
+
+    // הוספת תת נושא ראשון
+    const subtopicsContainer = topicContainer.querySelector('.subtopics-container');
+    createNewSubtopic(subtopicsContainer);
+
+    return topicContainer;
+}
+
+function createNewSubtopic(container, isEmptySubtopic = false) {
+    const subtopicRow = document.createElement('div');
+    subtopicRow.className = 'subtopic-row';
+
+    subtopicRow.innerHTML = `
+        <div class="subtopic-content">
+            <input type="text" class="subtopic-input" placeholder="תת נושא" onchange="handleSubtopicContentChange(this)">
+            <textarea class="subtopic-notes" placeholder="הערות"></textarea>
+        </div>
+        <div class="subtopic-controls">
+            <input type="number" class="subtopic-lessons" min="1" value="1"
+                   data-last-value="1" onchange="updateSubtopicLessons(this)">
+            <button class="remove-btn" onclick="removeSubtopic(this)">❌</button>
+        </div>
+    `;
+
+    container.appendChild(subtopicRow);
+
+    // אם זה תת נושא ריק, נסמן אותו
+    if (isEmptySubtopic) {
+        subtopicRow.dataset.empty = 'true';
+    }
+
+    return subtopicRow;
+}
+
+function updateTopicLessons(input) {
+    const topicContainer = input.closest('.topic-container');
+    const newTotal = parseInt(input.value) || 0;
+    const currentTotal = getTotalSubtopicLessons(topicContainer);
+
+    if (newTotal > currentTotal) {
+        // הוספת שיעורים - יוצר תתי נושאים ריקים
+        const toAdd = newTotal - currentTotal;
+        for (let i = 0; i < toAdd; i++) {
+            const subtopicsContainer = topicContainer.querySelector('.subtopics-container');
+            createNewSubtopic(subtopicsContainer, true);  // יצירת תת נושא ריק
+        }
+    } else if (newTotal < currentTotal) {
+        // הורדת שיעורים - מנסה להוריד מתתי נושאים ריקים
+        const toRemove = currentTotal - newTotal;
+        const emptySubtopics = getEmptySubtopics(topicContainer);
+
+        if (emptySubtopics.length === 0) {
+            showError('לא ניתן להוריד שיעורים - כל תתי הנושאים מלאים');
+            input.value = currentTotal;
+            return;
+        }
+
+        removeEmptySubtopicsLessons(topicContainer, toRemove);
+    }
+
+    updateTotalLessons();
+    saveSubjectsToStorage();
+}
+
+function getTotalSubtopicLessons(topicContainer) {
+    let total = 0;
+    topicContainer.querySelectorAll('.subtopic-lessons').forEach(input => {
+        total += parseInt(input.value) || 0;
+    });
+    return total;
+}
+function updateSubtopicLessons(input) {
+    const subtopicRow = input.closest('.subtopic-row');
+    const topicContainer = subtopicRow.closest('.topic-container');
+    const newValue = parseInt(input.value) || 0;
+    const oldValue = parseInt(input.dataset.lastValue) || 0;
+    const difference = newValue - oldValue;
+
+    if (difference > 0) {
+        // מנסה למצוא תת נושא ריק להוריד ממנו שיעורים
+        const emptySubtopics = Array.from(topicContainer.querySelectorAll('.subtopic-row[data-empty="true"]'))
+            .filter(row => row !== subtopicRow);
+
+        if (emptySubtopics.length > 0) {
+            let remainingToTake = difference;
+
+            for (const emptyRow of emptySubtopics) {
+                if (remainingToTake <= 0) break;
+
+                const emptyInput = emptyRow.querySelector('.subtopic-lessons');
+                const currentEmpty = parseInt(emptyInput.value) || 0;
+
+                if (currentEmpty <= remainingToTake) {
+                    // מחיקת תת הנושא הריק
+                    remainingToTake -= currentEmpty;
+                    emptyRow.remove();
+                } else {
+                    // הקטנת מספר השיעורים בתת הנושא הריק
+                    emptyInput.value = currentEmpty - remainingToTake;
+                    remainingToTake = 0;
+                }
+            }
+        } else {
+            // אין תתי נושאים ריקים - מוסיף לסך הכולל
+            const topicInput = topicContainer.querySelector('.topic-lessons');
+            topicInput.value = parseInt(topicInput.value) + difference;
+        }
+    } else if (difference < 0) {
+        // הורדת שיעורים - יוצר תת נושא ריק חדש
+        const subtopicsContainer = topicContainer.querySelector('.subtopics-container');
+        const newSubtopic = createNewSubtopic(subtopicsContainer, true);
+        const newSubtopicInput = newSubtopic.querySelector('.subtopic-lessons');
+        newSubtopicInput.value = Math.abs(difference);
+    }
+
+    // שמירת הערך הנוכחי לשימוש בפעם הבאה
+    input.dataset.lastValue = newValue;
+
+    updateTopicTotal(topicContainer);
+   updateTotalLessons();
+   saveSubjectsToStorage();
+
+    validateAndPlan(); // קריאה לפונקציה המלאה
+}
+
+function handleSubtopicContentChange(input) {
+    const subtopicRow = input.closest('.subtopic-row');
+    const hasContent = input.value.trim() !== '';
+    subtopicRow.dataset.empty = (!hasContent).toString();
+}
+
+function removeSubtopic(button) {
+    const subtopicRow = button.closest('.subtopic-row');
+    const subtopicInput = subtopicRow.querySelector('.subtopic-input');
+
+    if (subtopicInput.value.trim() && !confirm('האם למחוק את תת הנושא?')) {
+        return;
+    }
+
+    const topicContainer = subtopicRow.closest('.topic-container');
+    subtopicRow.remove();
+
+    updateTopicTotal(topicContainer);
+    updateTotalLessons();
+    saveSubjectsToStorage();
+
+     validateAndPlan(); // קריאה לפונקציה המלאה
+}
+
+function removeTopic(button) {
+    const topicContainer = button.closest('.topic-container');
+    const topicTitle = topicContainer.querySelector('.topic-title').value;
+
+    if (topicTitle && !confirm('האם למחוק את הנושא?')) {
+        return;
+    }
+
+    topicContainer.remove();
+    updateTotalLessons();
+    saveSubjectsToStorage();
+    planLessons(); // מעדכן את הלוז אחרי מחיקה
+}
+
+function updateTopicTotal(topicContainer) {
+    const total = getTotalSubtopicLessons(topicContainer);
+    topicContainer.querySelector('.topic-lessons').value = total;
+}
+
+function getEmptySubtopics(topicContainer) {
+    return Array.from(topicContainer.querySelectorAll('.subtopic-row[data-empty="true"]'));
+}
+
+function removeEmptySubtopicsLessons(topicContainer, count) {
+    let remaining = count;
+    const emptySubtopics = getEmptySubtopics(topicContainer);
+
+    for (const subtopic of emptySubtopics) {
+        if (remaining <= 0) break;
+
+        const input = subtopic.querySelector('.subtopic-lessons');
+        const current = parseInt(input.value) || 0;
+
+        if (current <= remaining) {
+            subtopic.remove();
+            remaining -= current;
+        } else {
+            input.value = current - remaining;
+            remaining = 0;
+        }
+    }
+}
+// עדכון addNewTopic
+function addNewTopic() {
+    if (!currentSubject) {
+        showError('יש לבחור מקצוע תחילה');
+        return;
+    }
+
+    const container = document.getElementById('planningContainer');
+    const addButton = container.querySelector('.add-topic-button-container');
+    const topicDiv = createNewTopic();
+
+    // הוספת הנושא החדש לפני כפתור ההוספה
+    container.insertBefore(topicDiv, addButton);
+
+    // גלילה אוטומטית לנושא החדש
+    topicDiv.scrollIntoView({ behavior: 'smooth', block: 'end' });
+
+    updateTotalLessons();
+    saveSubjectsToStorage();
+}
+// === Subject Management ===
+function toggleAddSubjectForm() {
+    const form = document.getElementById('addSubjectForm');
+    form.style.display = form.style.display === 'none' ? 'block' : 'none';
+    if (form.style.display === 'block') {
+        document.getElementById('newSubjectInput').focus();
+    }
+}
+function addNewSubject() {
+    const input = document.getElementById('newSubjectInput');
+    const name = input.value.trim();
+
+    if (!name) {
+        showError('נא להזין שם מקצוע');
+        return;
+    }
+
+    if (subjects.has(name)) {
+        showError('מקצוע זה כבר קיים');
+        return;
+    }
+
+    subjects.set(name, {
+        name: name,
+        lessonsPerDay: [0,0,0,0,0,0],
+        topics: [],
+        startDate: document.getElementById('startDate').value,
+        endDate: document.getElementById('endDate').value,
+        lastUpdate: new Date().toISOString(),
+        lessonChanges: {
+            cancelledLessons: [],
+            cancelledDays: [],
+            added: []
+        }
+    });
+
+    updateSubjectSelect();
+    saveSubjectsToStorage();
+
+    input.value = '';
+    toggleAddSubjectForm();
+    document.getElementById('subjectSelect').value = name;
+    handleSubjectChange();
+}
+
+function handleSubjectChange() {
+    const select = document.getElementById('subjectSelect');
+    const selectedName = select.value;
+
+    resetInterface();
+
+    if (selectedName) {
+        currentSubject = subjects.get(selectedName);
+        if (!currentSubject) {
+            currentSubject = {
+                name: selectedName,
+                lessonsPerDay: [0,0,0,0,0,0],
+                topics: [],
+                startDate: document.getElementById('startDate').value,
+                endDate: document.getElementById('endDate').value,
+                lastUpdate: new Date().toISOString(),
+                lessonChanges: {
+                    cancelledLessons: [],
+                    cancelledDays: [],
+                    added: []
+                }
+            };
+            subjects.set(selectedName, currentSubject);
+        }
+        // אתחול מבנה השינויים
+        initLessonChanges();
+        loadSubjectData();
+    } else {
+        currentSubject = null;
+        clearSchedule();
+    }
+
+    document.getElementById('currentSubject').textContent =
+        currentSubject ? `מקצוע נבחר: ${currentSubject.name}` : '';
+}async function loadSubjectData() {
+    if (!currentSubject) return;
+
+    initLessonChanges();
+
+    // טעינת מערכת שעות
+    const inputs = document.querySelectorAll('.lessons-table input');
+    currentSubject.lessonsPerDay.forEach((value, index) => {
+        if (inputs[index]) inputs[index].value = value;
+    });
+
+    // טעינת תאריכים
+    if (currentSubject.startDate) {
+        document.getElementById('startDate').value = currentSubject.startDate;
+    }
+    if (currentSubject.endDate) {
+        document.getElementById('endDate').value = currentSubject.endDate;
+    }
+
+    // טעינת נושאים
+    const container = document.getElementById('planningContainer');
+    if (!container) return;
+
+    container.innerHTML = `
+        <div class="topics-list">
+            <!-- הנושאים יתווספו כאן -->
+        </div>
+        <div class="add-topic-button-container">
+            <button onclick="addNewTopic()">הוסף נושא</button>
+        </div>
+    `;
+
+    const topicsList = container.querySelector('.topics-list');
+
+    if (currentSubject.topics && currentSubject.topics.length > 0) {
+        currentSubject.topics.forEach(topic => {
+            const topicContainer = createNewTopic();
+            topicsList.appendChild(topicContainer);
+
+            // מילוי פרטי הנושא
+            topicContainer.querySelector('.topic-title').value = topic.title;
+            topicContainer.querySelector('.topic-lessons').value = topic.lessons;
+
+            // מחיקת תת הנושא הדיפולטיבי
+            const subtopicsContainer = topicContainer.querySelector('.subtopics-container');
+            subtopicsContainer.innerHTML = '';
+
+            // הוספת תתי הנושאים
+            topic.subtopics.forEach(subtopic => {
+                const subtopicRow = createNewSubtopic(subtopicsContainer);
+                subtopicRow.querySelector('.subtopic-input').value = subtopic.title;
+                subtopicRow.querySelector('.subtopic-lessons').value = subtopic.lessons;
+                subtopicRow.querySelector('.subtopic-notes').value = subtopic.notes || '';
+                subtopicRow.dataset.empty = (!subtopic.title.trim()).toString();
+            });
+
+            // הכנסת הcontainer למצב מכווץ
+            subtopicsContainer.classList.remove('expanded');
+            topicContainer.querySelector('.expand-button').classList.remove('expanded');
+        });
+    }
+
+    updateTotalLessons();
+    await generateTable();
+
+    // החזרת סימוני ביטול והוספה
+    if (currentSubject.lessonChanges) {
+        document.querySelectorAll('.learning-day').forEach(cell => {
+            const row = cell.closest('tr');
+            const dateCell = row.querySelector('.gregorian-date');
+            const date = dateCell ? dateCell.textContent : '';
+            const dayIndex = Array.from(row.children).indexOf(cell) - 2;
+
+            if (currentSubject.lessonChanges.cancelled?.some(id =>
+                id === getCellIdentifier(cell))) {
+                cell.classList.add('cancelled-lesson');
+                cell.dataset.lessons = "0";
+                const container = cell.querySelector('.lessons-container');
+                if (container) container.innerHTML = '';
+            }
+
+            if (currentSubject.lessonChanges.added?.some(id =>
+                id === getCellIdentifier(cell))) {
+                cell.classList.add('added-lesson');
+                const originalLessons = parseInt(cell.dataset.original_lessons) || 0;
+                cell.dataset.lessons = (originalLessons + 1).toString();
+            }
+        });
+    }
+
+    // תכנון מחדש אם יש נושאים
+    if (currentSubject.topics && currentSubject.topics.length > 0) {
+        await validateAndPlan();
+    }
+}
+function clearSchedule() {
+    document.querySelectorAll('.lessons-container').forEach(container => {
+        container.innerHTML = '';
+    });
+}
+function updateSubjectSelect() {
+    const select = document.getElementById('subjectSelect');
+    const currentValue = select.value;
+
+    select.innerHTML = '<option value="">בחר מקצוע</option>';
+
+    subjects.forEach((subject, name) => {
+        const option = document.createElement('option');
+        option.value = name;
+        option.textContent = name;
+        select.appendChild(option);
+    });
+
+    if (currentValue && subjects.has(currentValue)) {
+        select.value = currentValue;
+    }
+}
+
+function resetInterface() {
+    // איפוס השדות השונים
+    document.querySelectorAll('.lessons-table input').forEach(input => input.value = 0);
+    document.getElementById('planningContainer').innerHTML = '';
+    document.getElementById('tableContainer').innerHTML = '';
+    document.getElementById('totalDays').innerHTML = '';
+
+    // איפוס כרטיסיות
+    document.getElementById('planning-tab').classList.remove('active');
+    document.getElementById('schedule-tab').classList.add('active');
+    document.getElementById('timetable-tab').classList.remove('active');
+
+    // איפוס כפתורי הכרטיסיות
+    document.querySelectorAll('.tab-button').forEach((button, index) => {
+        button.classList.toggle('active', index === 0);  // הכרטיסייה הראשונה פעילה
+    });
+
+    // איפוס הסיכומים
+    document.getElementById('totalLessonsValue').textContent = '0';
+    document.getElementById('plannedLessonsValue').textContent = '0';
+    document.getElementById('remainingLessonsValue').textContent = '0';
+}
+function handleScheduleChange() {
+    if (!currentSubject) return;
+
+    currentSubject.lessonsPerDay = Array.from(document.querySelectorAll('.lessons-table input'))
+        .map(input => parseInt(input.value) || 0);
+
+    saveSubjectsToStorage();
+    generateTable();
+    validateAndPlan(); // קריאה לפונקציה המלאה
+}
+
+function handleDateChange() {
+    if (!currentSubject) return;
+
+    currentSubject.startDate = document.getElementById('startDate').value;
+    currentSubject.endDate = document.getElementById('endDate').value;
+
+    saveSubjectsToStorage();
+    generateTable();
+}
+// === Hebrew Calendar Functions ===
+async function getHebrewDate(date) {
+    const dateStr = formatDate(date);
+
+    try {
+        const response = await fetch(`https://www.hebcal.com/converter?cfg=json&date=${dateStr}&g2h=1&lg=he`);
+        const data = await response.json();
+
+        return {
+            hebrew: data.hebrew,
+            year: data.hy,
+            month: HEBREW_MONTHS[data.hm] || data.hm,
+            day: data.hd
+        };
+    } catch (error) {
+        console.error('Error fetching hebrew date:', error);
+        return null;
+    }
+}
+
+async function getHebrewYearForDate(date) {
+    const hebrewDate = await getHebrewDate(date);
+    return hebrewDate ? hebrewDate.year : null;
+}
+
+function getHebrewYearLetter(hebrewYear) {
+    const letters = 'אבגדהוזחטיכלמנסעפצקרשת';
+    const baseYear = 5781; // תשפ"א
+    const diff = hebrewYear - baseYear;
+    const index = ((diff % letters.length) + letters.length) % letters.length;
+    return letters[index];
+}
+
+async function isSchoolDay(date) {
+    const dayOfWeek = date.getDay();
+    if (dayOfWeek === 6) return false; // שבת
+
+    const month = date.getMonth() + 1;
+    if (month === 7 || month === 8) return false; // חופש גדול
+
+    const hebrewDate = await getHebrewDate(date);
+    if (!hebrewDate) return true;
+
+    const { month: monthName, day } = hebrewDate;
+
+    switch (monthName) {
+        case 'אלול':
+            if (day >= 29) return false; // ערב ראש השנה
+            break;
+        case 'תשרי':
+            if (day <= 2) return false; // ראש השנה
+            if (day >= 9 && day <= 10) return false; // יום כיפור
+            if (day >= 11 && day <= 13) return false; // חופשה בין כיפור לסוכות
+            if (day >= 14 && day <= 22) return false; // סוכות
+            break;
+        case 'כסלו':
+            if (day === 25) return true; // יום ראשון של חנוכה
+            if (day >= 26) return false; // חנוכה
+            break;
+        case 'טבת':
+            if (day <= 2) return false; // חנוכה
+            break;
+        case 'אדר א':
+            return true; // כל הימים רגילים
+        case 'אדר ב':
+        case 'אדר': // בשנה פשוטה
+            if (day === 14 || day === 15) return false; // פורים
+            break;
+        case 'ניסן':
+            if (day >= 6 && day <= 21) return false; // פסח
+            break;
+        case 'אייר':
+            if (day === 5) {
+                if (dayOfWeek === 5 || dayOfWeek === 6 || dayOfWeek === 0) return false;
+            }
+            if ((day === 3 || day === 4) && dayOfWeek === 4) return false;
+            if (day === 6 && dayOfWeek === 1) return false;
+            if (day === 18) return true; // ל"ג בעומר
+            if (day === 28) return true; // יום ירושלים
+            break;
+        case 'סיון':
+            if (day === 5 || day === 6) return false; // שבועות
+            break;
+    }
+
+    return true;
+}
+
+// === Table Generation Functions ===
+function getWeeks(startDate, endDate) {
+    const weeks = [];
+    let currentDate = new Date(startDate);
+
+    while (currentDate.getDay() !== 0) {
+        currentDate.setDate(currentDate.getDate() - 1);
+    }
+
+    while (currentDate <= endDate) {
+        const weekStart = new Date(currentDate);
+        const weekDays = Array.from({ length: 6 }, (_, i) => {
+            const day = new Date(currentDate);
+            day.setDate(currentDate.getDate() + i);
+            return day;
+        });
+
+        weeks.push({
+            start: weekStart,
+            end: new Date(weekDays[5]),
+            days: weekDays
+        });
+
+        currentDate.setDate(currentDate.getDate() + 7);
+    }
+
+    return weeks;
+}
+async function generateTable() {
+    if (!currentSubject) {
+        document.getElementById('tableContainer').innerHTML = '';
+        document.getElementById('totalDays').innerHTML = '';
+        return;
+    }
+
+    const startDate = new Date(document.getElementById('startDate').value);
+    const endDate = new Date(document.getElementById('endDate').value);
+
+    if (!startDate || !endDate || isNaN(startDate.getTime()) || isNaN(endDate.getTime())) {
+        showError('נא להזין תאריכים תקינים');
+        return;
+    }
+
+    const tableContainer = document.getElementById('tableContainer');
+    tableContainer.innerHTML = '<div style="text-align: center; padding: 20px;">טוען...</div>';
+
+    try {
+        const weeks = getWeeks(startDate, endDate);
+        let totalLessons = 0;
+        let totalDays = 0;
+
+        let tableHtml = `
+            <div class="main-table-wrapper">
+                <table class="main-table">
+                    <thead>
+                        <tr>
+                            <th>תחילת שבוע</th>
+                            <th>סוף שבוע</th>
+                            ${weekDaysDisplay.days.map(day => `<th>${day}</th>`).join('')}
+                            <th>סה"כ שיעורים</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+        `;
+
+        for (const week of weeks) {
+            const [startHebrewDate, endHebrewDate, weekLessons] = await Promise.all([
+                getHebrewDate(week.start),
+                getHebrewDate(week.end),
+                getWeekLessons(week.days)
+            ]);
+
+            if (!startHebrewDate || !endHebrewDate) continue;
+
+            const weekTotalLessons = weekLessons.reduce((sum, current) => sum + current, 0);
+            totalLessons += weekTotalLessons;
+            totalDays += weekLessons.filter(l => l > 0).length;
+
+            tableHtml += `
+                <tr>
+                    <td>
+                        <div class="date-cell">
+                            <span class="hebrew-date">${startHebrewDate.hebrew}</span>
+                            <span class="gregorian-date">${formatLocalDate(week.start)}</span>
+                        </div>
+                    </td>
+                    <td>
+                        <div class="date-cell">
+                            <span class="hebrew-date">${endHebrewDate.hebrew}</span>
+                            <span class="gregorian-date">${formatLocalDate(week.end)}</span>
+                        </div>
+                    </td>
+                    ${await Promise.all(weekLessons.map(async (lessons, i) => {
+                        const day = week.days[i];
+                        const isLearningDay = await isSchoolDay(day);
+                        let cellClass;
+
+                        if (!isLearningDay) {
+                            // לא יום לימודים - צבע כתום
+                            cellClass = 'non-learning-day';
+                        } else {
+                            // יום לימודים - בדיקה אם יש שיעורים מתוכננים
+                            const scheduledLessons = currentSubject.lessonsPerDay[i] || 0;
+                            cellClass = scheduledLessons > 0 ? 'learning-day' : 'potential-learning-day';
+                        }
+
+                        return `
+                            <td class="${cellClass}"
+                                data-lessons="${lessons}"
+                                data-original-lessons="${lessons}">
+                                <div class="lesson-actions">
+                                    ${lessons > 0 ? `
+                                        <button class="action-button cancel-btn"
+                                                title="בטל שיעור"
+                                                onclick="cancelDay(this.closest('td'))">⊖</button>
+                                    ` : ''}
+                                    <button class="action-button add-btn"
+                                            title="הוסף שיעור"
+                                            onclick="addLesson(this.closest('td'))">⊕</button>
+                                </div>
+                                <div class="lessons-container"></div>
+                            </td>
+                        `;
+                    })).then(cells => cells.join(''))}
+                    <td class="total-lessons">${weekTotalLessons}</td>
+                </tr>
+            `;
+        }
+
+        tableHtml += '</tbody></table></div>';
+        tableContainer.innerHTML = tableHtml;
+
+        // החלת סימוני ביטול והוספה
+        if (currentSubject.lessonChanges) {
+            document.querySelectorAll('.learning-day, .potential-learning-day').forEach(cell => {
+                const row = cell.closest('tr');
+                const dateCell = row.querySelector('.gregorian-date');
+                const date = dateCell ? dateCell.textContent : '';
+                const dayIndex = Array.from(row.children).indexOf(cell) - 2;
+
+                // בדיקת יום מבוטל
+                const isDayCancelled = currentSubject.lessonChanges.cancelledDays?.some(d =>
+                    d.date === date && d.dayIndex === dayIndex
+                );
+                if (isDayCancelled) {
+                    cell.classList.add('cancelled-day');
+                    const container = cell.querySelector('.lessons-container');
+                    if (container) container.innerHTML = '';
+                    return;
+                }
+
+                // בדיקת שיעורים שנוספו
+                const isAdded = currentSubject.lessonChanges.added?.some(a =>
+                    a.date === date && a.dayIndex === dayIndex
+                );
+                if (isAdded) {
+                    cell.classList.add('added-lesson');
+                    const originalLessons = parseInt(cell.dataset.original_lessons) || 0;
+                    cell.dataset.lessons = (originalLessons + 1).toString();
+                }
+            });
+        }
+
+        document.getElementById('totalDays').innerHTML =
+            `סה"כ: ${totalDays} ימי לימוד, ${totalLessons} שיעורים למקצוע ${currentSubject.name}`;
+
+        document.getElementById('totalLessonsValue').textContent = totalLessons;
+        updateTotalLessons();
+
+        // תכנון מחדש של השיעורים אם יש נושאים
+        if (currentSubject.topics && currentSubject.topics.length > 0) {
+            await planLessons();
+        }
+
+    } catch (error) {
+        showError('אירעה שגיאה בטעינת הנתונים');
+        console.error('Error:', error);
+    }
+}
+// עדכון saveSubjectsToStorage
+function saveSubjectsToStorage() {
+    try {
+        if (!currentSubject) return;
+
+        currentSubject.topics = getTopicsData();
+        currentSubject.lessonsPerDay = Array.from(document.querySelectorAll('.lessons-table input'))
+            .map(input => parseInt(input.value) || 0);
+        currentSubject.lastUpdate = new Date().toISOString();
+
+        // וודא שמבנה השינויים קיים לפני השמירה
+        initLessonChanges();
+
+        subjects.set(currentSubject.name, currentSubject);
+        localStorage.setItem('subjects', JSON.stringify(Object.fromEntries(subjects)));
+    } catch (error) {
+        console.error('Error saving subjects:', error);
+        showError('שגיאה בשמירת הנתונים');
+    }
+}
+function loadSubjectsFromStorage() {
+    try {
+        const saved = localStorage.getItem('subjects');
+        if (saved) {
+            const subjectsData = JSON.parse(saved);
+            subjects = new Map(Object.entries(subjectsData));
+        } else {
+            subjects = new Map();
+        }
+        updateSubjectSelect();
+    } catch (error) {
+        console.error('Error loading subjects:', error);
+        subjects = new Map();
+    }
+}
+
+function getTopicsData() {
+    return Array.from(document.querySelectorAll('.topic-container')).map(container => {
+        const subtopics = Array.from(container.querySelectorAll('.subtopic-row')).map(row => ({
+            title: row.querySelector('.subtopic-input').value,
+            lessons: parseInt(row.querySelector('.subtopic-lessons').value) || 0,
+            notes: row.querySelector('.subtopic-notes').value
+        }));
+
+        return {
+            title: container.querySelector('.topic-title').value,
+            lessons: parseInt(container.querySelector('.topic-lessons').value) || 0,
+            subtopics: subtopics
+        };
+    });
+}
+
+// === CSV Export/Import Functions ===
+function exportToCSV(type = 'all') {
+    if (!currentSubject) {
+        showError('יש לבחור מקצוע תחילה');
+        return;
+    }
+
+    let rows = [];
+    const date = new Date().toLocaleDateString('he-IL').replace(/\./g, '-');
+    let filename = `${currentSubject.name}_`;
+
+    if (type === 'planning' || type === 'all') {
+        rows.push(['=== תכנון שיעורים ===']);
+        rows.push(['מקצוע', 'נושא', 'תת נושא', 'מספר שיעורים', 'הערות']);
+
+        const topics = getTopicsData(); // שימוש בפונקציה הקיימת לקבלת הנתונים
+        topics.forEach(topic => {
+            topic.subtopics.forEach(subtopic => {
+                rows.push([
+                    currentSubject.name,
+                    topic.title,
+                    subtopic.title,
+                    subtopic.lessons,
+                    subtopic.notes || ''
+                ]);
+            });
+        });
+    }
+
+    if (type === 'schedule' || type === 'all') {
+        if (rows.length > 0) rows.push([]);
+        rows.push(['=== לוז שיעורים ===']);
+        rows.push(['תאריך', 'יום', 'נושא', 'תת נושא', 'שיעור']);
+
+        document.querySelectorAll('.main-table tbody tr').forEach(row => {
+            const dateCell = row.querySelector('.date-cell');
+            if (!dateCell) return;
+
+            const hebrewDate = dateCell.querySelector('.hebrew-date')?.textContent || '';
+            const gregDate = dateCell.querySelector('.gregorian-date')?.textContent || '';
+            const fullDate = `${hebrewDate} (${gregDate})`;
+
+            const lessonCells = row.querySelectorAll('.learning-day .lesson-cell');
+            lessonCells.forEach(lesson => {
+                const dayCell = lesson.closest('td');
+                const dayIndex = Array.from(row.cells).indexOf(dayCell) - 2; // -2 because of date cells
+
+                rows.push([
+                    fullDate,
+                    weekDaysDisplay.days[dayIndex],
+                    lesson.querySelector('.lesson-topic')?.textContent || '',
+                    lesson.querySelector('.lesson-subtopic')?.textContent || '',
+                    dayCell.dataset.lessons || ''
+                ]);
+            });
+        });
+    }
+
+    if (rows.length === 0) {
+        showError('אין נתונים לייצוא');
+        return;
+    }
+
+    const csvContent = rows.map(row =>
+        row.map(cell => `"${(cell || '').toString().replace(/"/g, '""')}"`).join(',')
+    ).join('\n');
+
+    const blob = new Blob(['\ufeff' + csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+
+    filename += type === 'planning' ? `תכנון_${date}.csv` :
+                type === 'schedule' ? `לוז_${date}.csv` :
+                `מלא_${date}.csv`;
+
+    link.href = URL.createObjectURL(blob);
+    link.download = filename;
+    link.style.display = 'none';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+}// Add file input reset function
+function resetFileInput() {
+    const fileInput = document.getElementById('csvFileInput');
+    fileInput.value = ''; // Reset the file input
+}
+
+async function importFromCSV(file) {
+    if (!file) {
+        showError('נא לבחור קובץ');
+        resetFileInput();
+        return;
+    }
+
+    try {
+        const text = await file.text();
+        const rows = text.split('\n').map(row =>
+            row.split(',').map(cell =>
+                cell.trim().replace(/^"|"$/g, '')));
+
+        // הסרת שורת כותרת אם קיימת
+        if (rows[0]?.[0]?.includes('===') || rows[0]?.[0]?.toLowerCase().includes('subject')) {
+            rows.shift();
+        }
+
+        // בחירת סוג הייבוא
+        const importType = await new Promise(resolve => {
+            if (confirm('האם לייבא למקצוע חדש? לחץ "אישור" לחדש או "ביטול" למקצוע קיים')) {
+                // ייבוא למקצוע חדש
+                const name = prompt('הכנס שם למקצוע החדש:');
+                if (!name) {
+                    resolve(null);
+                    return;
+                }
+                if (subjects.has(name)) {
+                    showError('מקצוע זה כבר קיים');
+                    resolve(null);
+                    return;
+                }
+                resolve({ type: 'new', name });
+            } else {
+                // ייבוא למקצוע קיים
+                if (subjects.size === 0) {
+                    showError('אין מקצועות קיימים');
+                    resolve(null);
+                    return;
+                }
+
+                // יצירת רשימת המקצועות הקיימים
+                const subjectsList = Array.from(subjects.keys());
+                let selectHtml = 'בחר מקצוע:\n\n';
+                subjectsList.forEach((subject, index) => {
+                    selectHtml += `${index + 1}. ${subject}\n`;
+                });
+
+                const selectedIndex = prompt(selectHtml);
+                if (!selectedIndex) {
+                    resolve(null);
+                    return;
+                }
+
+                const selectedSubject = subjectsList[parseInt(selectedIndex) - 1];
+                if (!selectedSubject) {
+                    showError('בחירה לא תקינה');
+                    resolve(null);
+                    return;
+                }
+
+                if (!confirm(`האם אתה בטוח שברצונך לייבא למקצוע "${selectedSubject}"? פעולה זו תחליף את כל הנתונים הקיימים.`)) {
+                    resolve(null);
+                    return;
+                }
+
+                resolve({ type: 'existing', name: selectedSubject });
+            }
+        });
+
+        if (!importType) {
+            resetFileInput();
+            return;
+        }
+
+        // יצירת או עדכון המקצוע
+        let targetSubject;
+        if (importType.type === 'new') {
+            targetSubject = {
+                name: importType.name,
+                lessonsPerDay: [0,0,0,0,0,0],
+                topics: [],
+                startDate: document.getElementById('startDate').value,
+                endDate: document.getElementById('endDate').value,
+                lastUpdate: new Date().toISOString()
+            };
+            subjects.set(importType.name, targetSubject);
+        } else {
+            targetSubject = {
+                ...subjects.get(importType.name),
+                topics: [],
+                lastUpdate: new Date().toISOString()
+            };
+        }
+
+        // עיבוד הנתונים מהקובץ
+        let currentTopic = null;
+        let topicData = null;
+
+        for (const row of rows) {
+            if (row.length < 4) continue;
+
+            const [_, topicTitle, subtopicTitle, lessons, notes] = row;
+            if (!topicTitle || !subtopicTitle) continue;
+
+            if (!currentTopic || currentTopic !== topicTitle) {
+                if (topicData) {
+                    targetSubject.topics.push(topicData);
+                }
+                currentTopic = topicTitle;
+                topicData = {
+                    title: topicTitle,
+                    lessons: 0,
+                    subtopics: []
+                };
+            }
+
+            const subtopicLessons = parseInt(lessons) || 1;
+            topicData.lessons += subtopicLessons;
+            topicData.subtopics.push({
+                title: subtopicTitle,
+                lessons: subtopicLessons,
+                notes: notes || ''
+            });
+        }
+
+        // הוספת הנושא האחרון
+        if (topicData) {
+            targetSubject.topics.push(topicData);
+        }
+
+        // עדכון ה-Map
+        subjects.set(targetSubject.name, targetSubject);
+
+        // שמירה למאגר
+        saveSubjectsToStorage();
+
+        // עדכון הממשק
+        updateSubjectSelect();
+
+        // בחירת המקצוע החדש/מעודכן
+        document.getElementById('subjectSelect').value = targetSubject.name;
+
+        // טעינת הנתונים לממשק
+        currentSubject = targetSubject;
+        await loadSubjectData();
+
+        // עדכון הטבלה
+        await generateTable();
+
+        showError('הנתונים יובאו בהצלחה');
+
+    } catch (error) {
+        console.error('Error importing CSV:', error);
+        showError('שגיאה בקריאת הקובץ');
+    } finally {
+        resetFileInput(); // Reset file input in all cases
+    }
+}
+
+// Update the file input HTML
+// <input type="file" id="csvFileInput" accept=".csv" style="display: none" onchange="importFromCSV(this.files[0])">
+
+function resetFileInput() {
+    const fileInput = document.getElementById('csvFileInput');
+    fileInput.value = ''; // Reset the file input
+}
+
+function askForNewSubjectName() {
+    return new Promise(resolve => {
+        const name = prompt('הכנס שם למקצוע החדש:');
+        if (!name || subjects.has(name)) {
+            showError('שם לא תקין או כבר קיים');
+            resolve(null);
+        } else {
+            resolve(name);
+        }
+    });
+}
+function askForImportType() {
+    return new Promise(resolve => {
+        const result = confirm('האם לייבא את התכנון למקצוע חדש? לחץ אישור לחדש או ביטול לקיים');
+        resolve(result ? 'new' : 'existing');
+    });
+}
+async function generateSchoolYears() {
+    const currentYear = new Date().getFullYear();
+    const years = [];
+    const startYear = currentYear - 5;
+    const endYear = currentYear + 5;
+
+    for (let year = startYear; year <= endYear; year++) {
+        const tishriDate = new Date(year, 8, 15); // אמצע תשרי
+        const hebrewYear = await getHebrewYearForDate(tishriDate);
+        if (hebrewYear) {
+            const letter = getHebrewYearLetter(hebrewYear);
+            years.push({
+                value: year,
+                label: `תשפ"${letter} - ${year}/${year + 1}`
+            });
+        }
+    }
+
+    const select = document.getElementById('schoolYear');
+    select.innerHTML = years.map(year =>
+        `<option value="${year.value}" ${year.value === currentYear ? 'selected' : ''}>
+            ${year.label}
+        </option>`
+    ).join('');
+}
+
+async function updateDates() {
+    const year = document.getElementById('schoolYear').value;
+    if (!year) return;
+
+    const startDate = `${year}-09-01`;
+    const endDate = `${Number(year) + 1}-06-30`;
+
+    document.getElementById('startDate').value = startDate;
+    document.getElementById('endDate').value = endDate;
+
+    if (currentSubject) {
+        currentSubject.startDate = startDate;
+        currentSubject.endDate = endDate;
+        saveSubjectsToStorage();
+    }
+
+    generateTable();
+}
+
+async function getWeekLessons(weekDays) {
+    if (!currentSubject) return Array(6).fill(0);
+
+    const lessons = [];
+    for (let i = 0; i < weekDays.length; i++) {
+        const isLearning = await isSchoolDay(weekDays[i]);
+        lessons.push(isLearning ? (currentSubject.lessonsPerDay[i] || 0) : 0);
+    }
+    return lessons;
+}
+
+function updateTotalLessons() {
+    const totalPlanned = Array.from(document.querySelectorAll('.topic-container'))
+        .reduce((sum, topic) => sum + (parseInt(topic.querySelector('.topic-lessons').value) || 0), 0);
+
+    const totalAvailable = parseInt(document.getElementById('totalLessonsValue').textContent) || 0;
+
+    document.getElementById('plannedLessonsValue').textContent = totalPlanned;
+    document.getElementById('remainingLessonsValue').textContent = totalAvailable - totalPlanned;
+}
+function togglePlanningSection() {
+    if (!currentSubject) {
+        showError('יש לבחור מקצוע תחילה');
+        return;
+    }
+
+    const section = document.getElementById('planningSection');
+    if (section.style.display === 'none' || !section.style.display) {
+        section.style.display = 'block';
+        updateTotalLessons();
+    } else {
+        section.style.display = 'none';
+    }
+}
+
+// === Initialize Application ===
+async function initializeApp() {
+    try {
+        loadSubjectsFromStorage();
+        await generateSchoolYears();
+        await updateDates();
+    } catch (error) {
+        console.error('Error initializing app:', error);
+        showError('שגיאה באתחול האפליקציה');
+    }
+}
+
+// === Event Listeners ===
+window.onload = initializeApp;
+
+window.addEventListener('beforeunload', () => {
+    if (currentSubject) {
+        saveSubjectsToStorage();
+    }
+});
+
+</script>
+</body>
+</html>
