@@ -1163,57 +1163,42 @@ td.non-learning-day {
 
        <!-- בחירת מקצוע -->
 <div class="subjects-section">
-<!-- בתוך div class="subject-controls" -->
-<div class="subject-controls">
-  <select id="subjectSelect" class="subject-select" onchange="handleSubjectChange()">
-      <option value="">בחר מקצוע</option>
-  </select>
+  <div class="subject-controls">
+    <select id="subjectSelect" class="subject-select" onchange="handleSubjectChange()">
+        <option value="">בחר מקצוע</option>
+    </select>
 
-  <button onclick="toggleAddSubjectForm()">הוסף מקצוע</button>
-  <button onclick="deleteCurrentSubject()" class="delete-btn">מחק מקצוע</button>
+    <button onclick="toggleAddSubjectForm()">הוסף מקצוע</button>
+    <button onclick="deleteCurrentSubject()" class="delete-btn">מחק מקצוע</button>
 
-  <div class="dropdown">
-      <button onclick="toggleExportMenu()">ייצוא ⌄</button>
-      <div id="exportMenu" class="dropdown-content">
-          <a onclick="handleExportClick('planning')">ייצוא תכנון</a>
-          <a onclick="handleExportClick('schedule')">ייצוא לוז</a>
-          <a onclick="handleExportClick('all')">ייצוא הכל</a>
-      </div>
-  </div>
-
-  <button onclick="shareToGoogleDrive()">שמור בגוגל דרייב</button>
-
-  <div class="dropdown">
-      <button onclick="toggleWhatsAppMenu()">שלח בווטסאפ ⌄</button>
-      <div id="whatsappMenu" class="dropdown-content">
-          <a onclick="sendToWhatsApp('planning')">שלח תכנון</a>
-          <a onclick="sendToWhatsApp('schedule')">שלח לוז</a>
-          <a onclick="sendToWhatsApp('all')">שלח הכל</a>
-      </div>
-  </div>
-  <div class="dropdown">
-         <button onclick="toggleShareMenu()">שתף ⌄</button>
-         <div id="shareMenu" class="dropdown-content">
-             <a onclick="shareFile('planning')">שתף תכנון</a>
-             <a onclick="shareFile('schedule')">שתף לוז</a>
-             <a onclick="shareFile('all')">שתף הכל</a>
-         </div>
-     </div>
- 
-     <button onclick="saveToGoogleDrive('all')">שמור בגוגל דרייב</button>
-
-  <div class="dropdown">
-      <button onclick="togglePrintMenu()">הדפסה ⌄</button>
-      <div id="printMenu" class="dropdown-content">
-          <a onclick="printContent('planning')">הדפס תכנון</a>
-          <a onclick="printContent('schedule')">הדפס לוז</a>
-          <a onclick="printContent('all')">הדפס הכל</a>
-      </div>
-  </div>
-
-  <input type="file" id="csvFileInput" accept=".csv" style="display: none" onchange="importFromCSV(this.files[0])">
-  <button onclick="document.getElementById('csvFileInput').click()">ייבא תכנון</button>
-</div>
+        <!-- העברת כפתורי הייצוא וההדפסה -->
+        <div class="dropdown">
+        <button onclick="toggleExportMenu()">ייצוא ⌄</button>
+        <div id="exportMenu" class="dropdown-content">
+            <a onclick="handleExportClick('planning')">ייצוא תכנון</a>
+            <a onclick="handleExportClick('schedule')">ייצוא לוז</a>
+            <a onclick="handleExportClick('all')">ייצוא הכל</a>
+        </div>
+    </div>
+    <div class="dropdown">
+        <button onclick="toggleWhatsAppMenu()">שלח בווטסאפ ⌄</button>
+        <div id="whatsappMenu" class="dropdown-content">
+            <a onclick="sendToWhatsApp('planning')">שלח תכנון</a>
+            <a onclick="sendToWhatsApp('schedule')">שלח לוז</a>
+            <a onclick="sendToWhatsApp('all')">שלח הכל</a>
+        </div>
+    </div>
+        <div class="dropdown">
+            <button onclick="togglePrintMenu()">הדפסה ⌄</button>
+            <div id="printMenu" class="dropdown-content">
+                <a onclick="printContent('planning')">הדפס תכנון</a>
+                <a onclick="printContent('schedule')">הדפס לוז</a>
+                <a onclick="printContent('all')">הדפס הכל</a>
+            </div>
+        </div>
+        <input type="file" id="csvFileInput" accept=".csv" style="display: none" onchange="importFromCSV(this.files[0])">
+        <button onclick="document.getElementById('csvFileInput').click()">ייבא תכנון</button>
+    </div>
     <div id="addSubjectForm">
         <input type="text" id="newSubjectInput" placeholder="שם המקצוע">
         <button onclick="addNewSubject()">שמור מקצוע</button>
@@ -1372,96 +1357,7 @@ function toggleWhatsAppMenu() {
     // הצגת תפריט ווטסאפ
     menu.style.display = menu.style.display === 'block' ? 'none' : 'block';
 }
-async function shareFile(type = 'all') {
-    if (!currentSubject) {
-        showError('יש לבחור מקצוע תחילה');
-        return;
-    }
 
-    try {
-        const data = generateExportData(type);
-        const blob = new Blob(['\ufeff' + data], { type: 'text/csv;charset=utf-8;' });
-        const file = new File([blob], `${currentSubject.name}_${type}.csv`, { type: 'text/csv' });
-
-        if (navigator.share && navigator.canShare({ files: [file] })) {
-            await navigator.share({
-                files: [file],
-                title: `תכנון ${currentSubject.name}`,
-                text: 'קובץ תכנון לימודים'
-            });
-        } else {
-            showError('דפדפן זה אינו תומך בשיתוף ישיר');
-        }
-    } catch (error) {
-        console.error('Error sharing:', error);
-        showError('שגיאה בשיתוף הקובץ');
-    }
-}
-async function saveToGoogleDrive(type = 'all') {
-    if (!currentSubject) {
-        showError('יש לבחור מקצוע תחילה');
-        return;
-    }
-
-    try {
-        const data = generateExportData(type);
-        const blob = new Blob(['\ufeff' + data], { type: 'text/csv;charset=utf-8;' });
-        const file = new File([blob], `${currentSubject.name}_${type}.csv`, { type: 'text/csv' });
-        const fileUrl = URL.createObjectURL(blob);
-        
-        // פתיחת גוגל דרייב
-        const driveUrl = `https://drive.google.com/drive/u/0/my-drive?authuser=0`;
-        window.open(driveUrl, '_blank');
-
-        // הורדת הקובץ
-        const link = document.createElement('a');
-        link.href = fileUrl;
-        link.download = `${currentSubject.name}_${type}.csv`;
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-        URL.revokeObjectURL(fileUrl);
-
-        // הצגת הודעה למשתמש
-        const modal = document.createElement('div');
-        modal.style.cssText = `
-            position: fixed;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            background: white;
-            padding: 20px;
-            border-radius: 8px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-            z-index: 1000;
-            max-width: 400px;
-            text-align: center;
-        `;
-        modal.innerHTML = `
-            <h3 style="margin-top: 0;">שמירה בגוגל דרייב</h3>
-            <p>הקובץ ירד למחשב שלך.</p>
-            <p>חלון גוגל דרייב נפתח בטאב חדש.</p>
-            <p>כדי לשמור את הקובץ בדרייב:</p>
-            <ol style="text-align: right;">
-                <li>עבור לחלון גוגל דרייב</li>
-                <li>גרור את הקובץ שירד מהתיקייה שלך לחלון גוגל דרייב</li>
-            </ol>
-            <button onclick="this.parentElement.remove()" style="
-                background: #1a73e8;
-                color: white;
-                border: none;
-                padding: 8px 16px;
-                border-radius: 4px;
-                cursor: pointer;
-            ">הבנתי</button>
-        `;
-        document.body.appendChild(modal);
-
-    } catch (error) {
-        console.error('Error saving to Drive:', error);
-        showError('שגיאה בשמירת הקובץ');
-    }
-}
 async function sendToWhatsApp(type) {
     if (!currentSubject) {
         showError('יש לבחור מקצוע תחילה');
@@ -3632,33 +3528,6 @@ function updateTotalLessons() {
 
     document.getElementById('plannedLessonsValue').textContent = totalPlanned;
     document.getElementById('remainingLessonsValue').textContent = totalAvailable - totalPlanned;
-}
-async function shareToGoogleDrive(type = 'all') {
-    if (!currentSubject) {
-        showError('יש לבחור מקצוע תחילה');
-        return;
-    }
-
-    try {
-        // יצירת הקובץ
-        const data = generateExportData(type);
-        const blob = new Blob(['\ufeff' + data], { type: 'text/csv;charset=utf-8;' });
-        const file = new File([blob], `${currentSubject.name}_${type}.csv`, { type: 'text/csv' });
-
-        // שיתוף באמצעות Web Share API
-        if (navigator.share) {
-            await navigator.share({
-                files: [file],
-                title: `תכנון ${currentSubject.name}`,
-                text: 'קובץ תכנון לימודים'
-            });
-        } else {
-            showError('דפדפן זה אינו תומך בשיתוף ישיר');
-        }
-    } catch (error) {
-        console.error('Error sharing:', error);
-        showError('שגיאה בשיתוף הקובץ');
-    }
 }
 function togglePlanningSection() {
     if (!currentSubject) {
