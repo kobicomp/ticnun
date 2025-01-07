@@ -1487,7 +1487,7 @@ async function printContent(type = 'all') {
     // הדפסת לוז
     if (type === 'schedule' || type === 'all') {
         if (type === 'all') content += '<div class="page-break"></div>';
-        
+
         content += `
             <h2>לוח שיעורים</h2>
             <table>
@@ -1977,17 +1977,83 @@ function addLesson(cell) {
         const date = dateCell ? dateCell.textContent : '';
         const dayIndex = Array.from(row.children).indexOf(cell) - 2;
 
+        // מציאת כל השיעורים העתידיים
+        const futureLessons = [];
+        let foundCurrent = false;
+        document.querySelectorAll('.main-table tbody tr').forEach(tableRow => {
+            tableRow.querySelectorAll('td').forEach((tableCell, index) => {
+                if (index < 2 || index > 7) return;
+                if (!tableCell.classList.contains('learning-day')) return;
+
+                const cellDate = tableRow.querySelector('.gregorian-date')?.textContent;
+                const cellDayIndex = index - 2;
+                
+                // בדיקה אם זה שיעור עתידי
+                if (foundCurrent || (cellDate === date && cellDayIndex === dayIndex)) {
+                    foundCurrent = true;
+                    const lessons = tableCell.querySelectorAll('.lesson-cell:not(.cancelled-lesson)');
+                    lessons.forEach(lesson => {
+                        futureLessons.push({
+                            topic: lesson.querySelector('.lesson-topic')?.textContent || '',
+                            subtopic: lesson.querySelector('.lesson-subtopic')?.textContent || ''
+                        });
+                    });
+                }
+            });
+        });
+
+        if (futureLessons.length > 0) {
+            // הסרת השיעור האחרון
+            futureLessons.pop();
+
+            // הזזת כל השיעורים אחורה
+            let currentRow = row;
+            let currentCell = cell;
+            let lessonIndex = 0;
+
+            while (lessonIndex < futureLessons.length) {
+                if (!currentCell || !currentCell.classList.contains('learning-day')) {
+                    currentRow = currentRow.nextElementSibling;
+                    if (!currentRow) break;
+                    
+                    // מציאת התא הבא עם שיעורים
+                    Array.from(currentRow.children).slice(2, 8).forEach(cell => {
+                        if (cell.classList.contains('learning-day')) {
+                            currentCell = cell;
+                        }
+                    });
+                    continue;
+                }
+
+                const lessonsContainer = currentCell.querySelector('.lessons-container');
+                if (lessonsContainer) {
+                    const lesson = futureLessons[lessonIndex];
+                    const lessonElement = document.createElement('div');
+                    lessonElement.className = 'lesson-cell';
+                    lessonElement.innerHTML = `
+                        <button class="cancel-lesson-btn" onclick="cancelLesson(this.closest('td'), this.closest('.lesson-cell'))">⊖</button>
+                        <div class="lesson-topic">${lesson.topic}</div>
+                        <div class="lesson-subtopic">${lesson.subtopic}</div>
+                    `;
+                    lessonsContainer.appendChild(lessonElement);
+                    lessonIndex++;
+                }
+
+                currentCell = currentCell.nextElementSibling;
+            }
+        }
+
+        // הוספת השיעור החדש
         const lessonId = {
             date: date,
             dayIndex: dayIndex
         };
 
-        // בדיקה אם כבר נוסף שיעור
         if (!currentSubject.lessonChanges.added.some(a =>
             a.date === lessonId.date && a.dayIndex === lessonId.dayIndex
         )) {
             currentSubject.lessonChanges.added.push(lessonId);
-
+            
             // עדכון מספר השיעורים
             const currentLessons = parseInt(cell.dataset.lessons) || 0;
             cell.dataset.lessons = (currentLessons + 1).toString();
@@ -2002,10 +2068,10 @@ function addLesson(cell) {
                 container.className = 'lessons-container';
                 cell.appendChild(container);
             }
-
-            saveSubjectsToStorage();
-            validateAndPlan();
         }
+
+        saveSubjectsToStorage();
+        validateAndPlan();
     }
 }
 
