@@ -1392,15 +1392,7 @@ async function sendToWhatsApp(type) {
     const whatsappUrl = `https://web.whatsapp.com/send?phone=${phoneNumber}&text=${encodeURIComponent(message)}`;
     window.open(whatsappUrl, '_blank');
 }
-function parseDate(dateStr) {
-    dateStr = dateStr.trim();
-    const parts = dateStr.split('/');
-    if (parts.length === 3) {
-        const [day, month, year] = parts;
-        return new Date(year, month - 1, day);
-    }
-    return new Date(dateStr);
-}
+
 async function printContent(type = 'all') {
     if (!currentSubject) {
         showError('יש לבחור מקצוע תחילה');
@@ -1568,25 +1560,20 @@ async function printContent(type = 'all') {
     }, 250);
 }
 
-function parseDate(dateStr) {
-    dateStr = dateStr.trim();
-    const parts = dateStr.split('/');
-    if (parts.length === 3) {
-        const [day, month, year] = parts;
-        return new Date(year, month - 1, day);
-    }
-    return new Date(dateStr);
-}
+
 // פונקציה חדשה לקבלת התאריך הספציפי של יום בשבוע
 function getDayDate(row, dayIndex) {
     const dateCell = row.querySelector('.gregorian-date');
+    console.log('dateCell:', dateCell?.textContent);
     if (!dateCell) return null;
 
-    const startDate = new Date(dateCell.textContent);
-    if (isNaN(startDate.getTime())) return null;
+    const startDate = parseDate(dateCell.textContent);
+    console.log('startDate:', startDate);
+    if (!startDate) return null;
 
     const dayDate = new Date(startDate);
     dayDate.setDate(startDate.getDate() + dayIndex);
+    console.log('dayDate:', dayDate, 'dayIndex:', dayIndex);
 
     return dayDate;
 }
@@ -3144,21 +3131,40 @@ async function exportToCSV(type = 'all') {
 
 // פונקציית עזר לפירוק תאריך
 function parseDate(dateStr) {
+    if (!dateStr) return null;
+    console.log('parsing date:', dateStr);
+    
+    // אם זה כבר אובייקט Date, נחזיר אותו
+    if (dateStr instanceof Date) return dateStr;
+
+    // אם זה תאריך בפורמט ISO, נחזיר Date חדש
+    if (dateStr.includes('-')) {
+        return new Date(dateStr);
+    }
+
+    // אם זה תאריך בעברית (למשל "1 בינואר 2024")
     const parts = dateStr.split(' ');
-    const dayStr = parts[0];
-    const monthStr = parts[1];
-    const yearStr = parts[2];
+    if (parts.length === 3) {
+        const dayStr = parts[0];
+        const monthStr = parts[1];
+        const yearStr = parts[2];
+        
+        const day = parseInt(dayStr);
+        const months = {
+            'בינואר': 0, 'בפברואר': 1, 'במרץ': 2, 'באפריל': 3,
+            'במאי': 4, 'ביוני': 5, 'ביולי': 6, 'באוגוסט': 7,
+            'בספטמבר': 8, 'באוקטובר': 9, 'בנובמבר': 10, 'בדצמבר': 11
+        };
+        const month = months[monthStr];
+        const year = parseInt(yearStr);
+        
+        console.log('parsed:', { day, month, year });
+        if (!isNaN(day) && !isNaN(month) && !isNaN(year)) {
+            return new Date(year, month, day);
+        }
+    }
     
-    const day = parseInt(dayStr);
-    const months = {
-        'בינואר': 0, 'בפברואר': 1, 'במרץ': 2, 'באפריל': 3,
-        'במאי': 4, 'ביוני': 5, 'ביולי': 6, 'באוגוסט': 7,
-        'בספטמבר': 8, 'באוקטובר': 9, 'בנובמבר': 10, 'בדצמבר': 11
-    };
-    const month = months[monthStr];
-    const year = parseInt(yearStr);
-    
-    return new Date(year, month, day);
+    return null;
 }
 // Add file input reset function
 function resetFileInput() {
