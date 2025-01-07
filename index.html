@@ -1540,64 +1540,13 @@ function printContent(type = 'all') {
         return;
     }
 
-    // יצירת חלון הדפסה חדש
     const printWindow = window.open('', '_blank');
-
-    // הכנת תוכן להדפסה
     let content = `
         <html dir="rtl">
         <head>
             <title>הדפסת ${currentSubject.name}</title>
             <style>
-                body {
-                    font-family: Arial, sans-serif;
-                    padding: 20px;
-                }
-                .print-header {
-                    text-align: center;
-                    margin-bottom: 20px;
-                }
-                .print-header h1 {
-                    color: #1a237e;
-                    margin-bottom: 10px;
-                }
-                .print-header h2 {
-                    color: #666;
-                    font-size: 16px;
-                }
-                table {
-                    width: 100%;
-                    border-collapse: collapse;
-                    margin: 20px 0;
-                }
-                th, td {
-                    border: 1px solid #ccc;
-                    padding: 8px;
-                    text-align: right;
-                }
-                th {
-                    background-color: #e3f2fd;
-                }
-                .topic-title {
-                    font-weight: bold;
-                    color: #1a237e;
-                }
-                .subtopic {
-                    padding-right: 20px;
-                }
-                .lesson-cell {
-                    margin: 5px 0;
-                    padding: 5px;
-                    border-bottom: 1px solid #eee;
-                }
-                .page-break {
-                    page-break-before: always;
-                }
-                @media print {
-                    .no-print {
-                        display: none;
-                    }
-                }
+                /* ... existing styles ... */
             </style>
         </head>
         <body>
@@ -1607,42 +1556,7 @@ function printContent(type = 'all') {
             </div>
     `;
 
-    // הוספת תכנון
-    if (type === 'planning' || type === 'all') {
-        content += `
-            <h2>תכנון שיעורים</h2>
-            <table>
-                <thead>
-                    <tr>
-                        <th>נושא</th>
-                        <th>תת נושא</th>
-                        <th>מספר שיעורים</th>
-                        <th>הערות</th>
-                    </tr>
-                </thead>
-                <tbody>
-        `;
-
-        const topics = getTopicsData();
-        topics.forEach(topic => {
-            topic.subtopics.forEach((subtopic, index) => {
-                content += `
-                    <tr>
-                        <td>${index === 0 ? topic.title : ''}</td>
-                        <td>${subtopic.title}</td>
-                        <td>${subtopic.lessons}</td>
-                        <td>${subtopic.notes || ''}</td>
-                    </tr>
-                `;
-            });
-        });
-
-        content += '</tbody></table>';
-    }
-
-    // הוספת לוז
     if (type === 'schedule' || type === 'all') {
-        content += type === 'all' ? '<div class="page-break"></div>' : '';
         content += `
             <h2>לוח שיעורים</h2>
             <table>
@@ -1657,36 +1571,34 @@ function printContent(type = 'all') {
         `;
 
         document.querySelectorAll('.main-table tbody tr').forEach(row => {
-            const firstDateCell = row.querySelector('.date-cell');
-            if (!firstDateCell) return;
-
-            const hebrewDate = firstDateCell.querySelector('.hebrew-date')?.textContent || '';
-            const gregDate = firstDateCell.querySelector('.gregorian-date')?.textContent || '';
-
             row.querySelectorAll('td').forEach((cell, index) => {
-                if (index > 1 && index < 8) { // רק תאי ימים
-                    const lessons = cell.querySelectorAll('.lesson-cell');
-                    if (lessons.length && !cell.classList.contains('cancelled-day')) {
-                        content += `
-                            <tr>
-                                <td>השבוע שמתחיל ב: ${hebrewDate} ${gregDate}</td>
-                                <td>${weekDaysDisplay.days[index-2]}</td>
-                                <td>
-                                    ${Array.from(lessons).map(lesson => {
-                                        if (!lesson.classList.contains('cancelled-lesson')) {
-                                            return `
-                                                <div class="lesson-cell">
-                                                    <div class="lesson-topic">${lesson.querySelector('.lesson-topic')?.textContent || ''}</div>
-                                                    <div class="lesson-subtopic">${lesson.querySelector('.lesson-subtopic')?.textContent || ''}</div>
-                                                </div>
-                                            `;
-                                        }
-                                        return '';
-                                    }).join('')}
-                                </td>
-                            </tr>
-                        `;
-                    }
+                if (index < 2 || index > 7) return; // Skip date cells and total
+                if (!cell.classList.contains('learning-day')) return;
+
+                const dayDate = getDayDate(row, index - 2);
+                if (!dayDate) return;
+
+                const lessons = cell.querySelectorAll('.lesson-cell');
+                if (lessons.length && !cell.classList.contains('cancelled-day')) {
+                    content += `
+                        <tr>
+                            <td>${formatLocalDate(dayDate)}</td>
+                            <td>${weekDaysDisplay.days[index-2]}</td>
+                            <td>
+                                ${Array.from(lessons).map(lesson => {
+                                    if (!lesson.classList.contains('cancelled-lesson')) {
+                                        return `
+                                            <div class="lesson-cell">
+                                                <div class="lesson-topic">${lesson.querySelector('.lesson-topic')?.textContent || ''}</div>
+                                                <div class="lesson-subtopic">${lesson.querySelector('.lesson-subtopic')?.textContent || ''}</div>
+                                            </div>
+                                        `;
+                                    }
+                                    return '';
+                                }).join('')}
+                            </td>
+                        </tr>
+                    `;
                 }
             });
         });
@@ -1694,21 +1606,16 @@ function printContent(type = 'all') {
         content += '</tbody></table>';
     }
 
-    content += `
-        </body></html>
-    `;
+    content += '</body></html>';
 
-    // כתיבת התוכן לחלון ההדפסה
     printWindow.document.write(content);
     printWindow.document.close();
 
-    // הדפסה
     setTimeout(() => {
         printWindow.print();
         printWindow.close();
     }, 250);
 }
-
 function parseDate(dateStr) {
     dateStr = dateStr.trim();
     const parts = dateStr.split('/');
@@ -3430,90 +3337,37 @@ function askForImportType() {
         resolve(result ? 'new' : 'existing');
     });
 }
+async function generateSchoolYears() {
+    const currentDate = new Date();
+    const currentYear = currentDate.getFullYear();
+    const currentMonth = currentDate.getMonth() + 1;
 
-function printContent(type = 'all') {
-    if (!currentSubject) {
-        showError('יש לבחור מקצוע תחילה');
-        return;
-    }
+    // If we're in Jul-Aug, show next year as current
+    const adjustedYear = currentMonth >= 7 ? currentYear : currentYear - 1;
 
-    const printWindow = window.open('', '_blank');
-    let content = `
-        <html dir="rtl">
-        <head>
-            <title>הדפסת ${currentSubject.name}</title>
-            <style>
-                /* ... existing styles ... */
-            </style>
-        </head>
-        <body>
-            <div class="print-header">
-                <h1>${currentSubject.name}</h1>
-                <h2>נוצר בתאריך: ${new Date().toLocaleDateString('he-IL')}</h2>
-            </div>
-    `;
+    const years = [];
+    const startYear = adjustedYear - 5;
+    const endYear = adjustedYear + 5;
 
-    if (type === 'schedule' || type === 'all') {
-        content += `
-            <h2>לוח שיעורים</h2>
-            <table>
-                <thead>
-                    <tr>
-                        <th>תאריך</th>
-                        <th>יום</th>
-                        <th>שיעורים</th>
-                    </tr>
-                </thead>
-                <tbody>
-        `;
-
-        document.querySelectorAll('.main-table tbody tr').forEach(row => {
-            row.querySelectorAll('td').forEach((cell, index) => {
-                if (index < 2 || index > 7) return; // Skip date cells and total
-                if (!cell.classList.contains('learning-day')) return;
-
-                const dayDate = getDayDate(row, index - 2);
-                if (!dayDate) return;
-
-                const lessons = cell.querySelectorAll('.lesson-cell');
-                if (lessons.length && !cell.classList.contains('cancelled-day')) {
-                    content += `
-                        <tr>
-                            <td>${formatLocalDate(dayDate)}</td>
-                            <td>${weekDaysDisplay.days[index-2]}</td>
-                            <td>
-                                ${Array.from(lessons).map(lesson => {
-                                    if (!lesson.classList.contains('cancelled-lesson')) {
-                                        return `
-                                            <div class="lesson-cell">
-                                                <div class="lesson-topic">${lesson.querySelector('.lesson-topic')?.textContent || ''}</div>
-                                                <div class="lesson-subtopic">${lesson.querySelector('.lesson-subtopic')?.textContent || ''}</div>
-                                            </div>
-                                        `;
-                                    }
-                                    return '';
-                                }).join('')}
-                            </td>
-                        </tr>
-                    `;
-                }
+    for (let year = startYear; year <= endYear; year++) {
+        const tishriDate = new Date(year, 8, 15); // September 15th
+        const hebrewYear = await getHebrewYearForDate(tishriDate);
+        if (hebrewYear) {
+            const letter = getHebrewYearLetter(hebrewYear);
+            years.push({
+                value: year,
+                label: `תשפ"${letter} - ${year}/${year + 1}`
             });
-        });
-
-        content += '</tbody></table>';
+        }
     }
 
-    content += '</body></html>';
-
-    printWindow.document.write(content);
-    printWindow.document.close();
-
-    setTimeout(() => {
-        printWindow.print();
-        printWindow.close();
-    }, 250);
+    const select = document.getElementById('schoolYear');
+    select.innerHTML = years.map(year =>
+        `<option value="${year.value}" ${year.value === adjustedYear ? 'selected' : ''}>
+            ${year.label}
+        </option>`
+    ).join('');
 }
-
 
 async function updateDates() {
     const year = document.getElementById('schoolYear').value;
