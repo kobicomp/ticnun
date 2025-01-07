@@ -1401,7 +1401,7 @@ function parseDate(dateStr) {
     }
     return new Date(dateStr);
 }
-function printContent(type = 'all') {
+async function printContent(type = 'all') {
     if (!currentSubject) {
         showError('יש לבחור מקצוע תחילה');
         return;
@@ -1484,7 +1484,7 @@ function printContent(type = 'all') {
     // הדפסת לוז
     if (type === 'schedule' || type === 'all') {
         if (type === 'all') content += '<div style="page-break-before: always;"></div>';
-
+        
         content += `
             <h2>לוח שיעורים</h2>
             <table>
@@ -1498,52 +1498,57 @@ function printContent(type = 'all') {
                 <tbody>
         `;
 
-        // איסוף השיעורים המתוכננים
-        const scheduledLessons = [];
-        document.querySelectorAll('.main-table tbody tr').forEach(row => {
-            const firstDateCell = row.querySelector('.date-cell');
-            if (!firstDateCell) return;
+        // איסוף כל השיעורים המתוכננים
+        const lessonsPromises = [];
 
-            row.querySelectorAll('td').forEach(async (cell, index) => {
-                if (index < 2 || index > 7) return; // דילוג על תאי תאריך וסה"כ
+        document.querySelectorAll('.main-table tbody tr').forEach(row => {
+            row.querySelectorAll('td').forEach((cell, index) => {
+                if (index < 2 || index > 7) return;
                 if (!cell.classList.contains('learning-day')) return;
 
-                const dayDate = getDayDate(row, index - 2);
-                if (!dayDate) return;
+                const dayIndex = index - 2;
+                const actualDate = getDayDate(row, dayIndex);
+                if (!actualDate) return;
 
-                const hebrewDate = await getHebrewDate(dayDate);
                 const lessons = cell.querySelectorAll('.lesson-cell:not(.cancelled-lesson)');
-
                 if (lessons.length && !cell.classList.contains('cancelled-day')) {
-                    scheduledLessons.push({
-                        date: dayDate,
-                        hebrewDate: hebrewDate,
-                        dayIndex: index - 2,
-                        lessons: Array.from(lessons).map(lesson => ({
-                            topic: lesson.querySelector('.lesson-topic')?.textContent || '',
-                            subtopic: lesson.querySelector('.lesson-subtopic')?.textContent || ''
-                        }))
+                    lessons.forEach(lesson => {
+                        lessonsPromises.push((async () => {
+                            const hebrewDate = await getFullHebrewDate(actualDate);
+                            return {
+                                hebrewDate,
+                                gregDate: formatLocalDate(actualDate),
+                                day: weekDaysDisplay.days[dayIndex],
+                                topic: lesson.querySelector('.lesson-topic')?.textContent || '',
+                                subtopic: lesson.querySelector('.lesson-subtopic')?.textContent || ''
+                            };
+                        })());
                     });
                 }
             });
         });
 
+        // המתנה לכל התאריכים העבריים
+        const lessonsData = await Promise.all(lessonsPromises);
+
         // מיון לפי תאריך
-        scheduledLessons.sort((a, b) => a.date - b.date);
+        lessonsData.sort((a, b) => {
+            const dateA = parseDate(a.gregDate);
+            const dateB = parseDate(b.gregDate);
+            return dateA - dateB;
+        });
 
         // הוספת השיעורים לטבלה
-        scheduledLessons.forEach(daySchedule => {
+        lessonsData.forEach(lesson => {
             content += `
                 <tr>
-                    <td>${daySchedule.hebrewDate ? daySchedule.hebrewDate.hebrew : ''} (${formatLocalDate(daySchedule.date)})</td>
-                    <td>${weekDaysDisplay.days[daySchedule.dayIndex]}</td>
+                    <td>${lesson.hebrewDate} (${lesson.gregDate})</td>
+                    <td>${lesson.day}</td>
                     <td>
-                        ${daySchedule.lessons.map(lesson => `
-                            <div class="lesson-cell">
-                                <div class="lesson-topic">${lesson.topic}</div>
-                                <div class="lesson-subtopic">${lesson.subtopic}</div>
-                            </div>
-                        `).join('')}
+                        <div class="lesson-cell">
+                            <div class="lesson-topic">${lesson.topic}</div>
+                            <div class="lesson-subtopic">${lesson.subtopic}</div>
+                        </div>
                     </td>
                 </tr>
             `;
