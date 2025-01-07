@@ -1416,21 +1416,25 @@ async function shareToGoogleDrive(type = 'all') {
         const blob = new Blob(['\ufeff' + data], { type: 'text/csv;charset=utf-8;' });
         const file = new File([blob], `${currentSubject.name}_${type}.csv`, { type: 'text/csv' });
 
-        if (navigator.share && navigator.canShare({ files: [file] })) {
-            await navigator.share({
-                files: [file],
-                title: `תכנון ${currentSubject.name}`,
-                text: 'קובץ תכנון לימודים'
-            });
-        } else {
-            // נעבור לייצוא רגיל אם שיתוף לא נתמך
-            const link = document.createElement('a');
-            link.href = URL.createObjectURL(blob);
-            link.download = `${currentSubject.name}_${type}.csv`;
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
-        }
+        // יצירת URL זמני לקובץ
+        const fileUrl = URL.createObjectURL(blob);
+        
+        // פתיחת דיאלוג שיתוף של גוגל דרייב
+        const driveUrl = `https://drive.google.com/drive/u/0/my-drive?authuser=0`;
+        window.open(driveUrl, '_blank');
+
+        // הורדת הקובץ למחשב במקביל
+        const link = document.createElement('a');
+        link.href = fileUrl;
+        link.download = `${currentSubject.name}_${type}.csv`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        
+        // שחרור המשאב
+        URL.revokeObjectURL(fileUrl);
+
+        showError('קובץ הורד. אנא גרור אותו לחלון גוגל דרייב שנפתח');
     } catch (error) {
         console.error('Error sharing:', error);
         showError('שגיאה בשיתוף הקובץ');
@@ -3617,33 +3621,7 @@ function updateTotalLessons() {
     document.getElementById('plannedLessonsValue').textContent = totalPlanned;
     document.getElementById('remainingLessonsValue').textContent = totalAvailable - totalPlanned;
 }
-async function shareToGoogleDrive(type = 'all') {
-    if (!currentSubject) {
-        showError('יש לבחור מקצוע תחילה');
-        return;
-    }
 
-    try {
-        // יצירת הקובץ
-        const data = generateExportData(type);
-        const blob = new Blob(['\ufeff' + data], { type: 'text/csv;charset=utf-8;' });
-        const file = new File([blob], `${currentSubject.name}_${type}.csv`, { type: 'text/csv' });
-
-        // שיתוף באמצעות Web Share API
-        if (navigator.share) {
-            await navigator.share({
-                files: [file],
-                title: `תכנון ${currentSubject.name}`,
-                text: 'קובץ תכנון לימודים'
-            });
-        } else {
-            showError('דפדפן זה אינו תומך בשיתוף ישיר');
-        }
-    } catch (error) {
-        console.error('Error sharing:', error);
-        showError('שגיאה בשיתוף הקובץ');
-    }
-}
 function togglePlanningSection() {
     if (!currentSubject) {
         showError('יש לבחור מקצוע תחילה');
