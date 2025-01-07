@@ -1403,6 +1403,7 @@ async function printContent(type = 'all') {
     let content = `
         <html dir="rtl">
         <head>
+            <meta charset="UTF-8">
             <title>הדפסת ${currentSubject.name}</title>
             <style>
                 body {
@@ -1430,6 +1431,16 @@ async function printContent(type = 'all') {
                     margin: 5px 0;
                     padding: 5px;
                     border-bottom: 1px solid #eee;
+                }
+                .topic-title {
+                    font-weight: bold;
+                    color: #1a237e;
+                }
+                .subtopic {
+                    padding-right: 20px;
+                }
+                .page-break {
+                    page-break-before: always;
                 }
             </style>
         </head>
@@ -1475,7 +1486,7 @@ async function printContent(type = 'all') {
 
     // הדפסת לוז
     if (type === 'schedule' || type === 'all') {
-        if (type === 'all') content += '<div style="page-break-before: always;"></div>';
+        if (type === 'all') content += '<div class="page-break"></div>';
         
         content += `
             <h2>לוח שיעורים</h2>
@@ -1538,8 +1549,8 @@ async function printContent(type = 'all') {
                     <td>${lesson.day}</td>
                     <td>
                         <div class="lesson-cell">
-                            <div class="lesson-topic">${lesson.topic}</div>
-                            <div class="lesson-subtopic">${lesson.subtopic}</div>
+                            <div class="topic-title">${lesson.topic}</div>
+                            <div class="subtopic">${lesson.subtopic}</div>
                         </div>
                     </td>
                 </tr>
@@ -1559,7 +1570,6 @@ async function printContent(type = 'all') {
         printWindow.close();
     }, 250);
 }
-
 
 // פונקציה חדשה לקבלת התאריך הספציפי של יום בשבוע
 function getDayDate(row, dayIndex) {
@@ -3136,7 +3146,7 @@ async function exportToCSV(type = 'all') {
 function parseDate(dateStr) {
     if (!dateStr) return null;
     console.log('parsing date:', dateStr);
-    
+
     // אם זה כבר אובייקט Date, נחזיר אותו
     if (dateStr instanceof Date) return dateStr;
 
@@ -3151,7 +3161,7 @@ function parseDate(dateStr) {
         const dayStr = parts[0];
         const monthStr = parts[1];
         const yearStr = parts[2];
-        
+
         const day = parseInt(dayStr);
         const months = {
             'בינואר': 0, 'בפברואר': 1, 'במרץ': 2, 'באפריל': 3,
@@ -3160,13 +3170,13 @@ function parseDate(dateStr) {
         };
         const month = months[monthStr];
         const year = parseInt(yearStr);
-        
+
         console.log('parsed:', { day, month, year });
         if (!isNaN(day) && !isNaN(month) && !isNaN(year)) {
             return new Date(year, month, day);
         }
     }
-    
+
     return null;
 }
 // Add file input reset function
