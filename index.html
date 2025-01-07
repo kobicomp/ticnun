@@ -3253,11 +3253,6 @@ function resetFileInput() {
     fileInput.value = ''; // Reset the file input
 }
 
-function resetFileInput() {
-    const fileInput = document.getElementById('csvFileInput');
-    if (fileInput) fileInput.value = '';
-}
-
 async function importFromCSV(file) {
     if (!file) {
         showError('נא לבחור קובץ');
@@ -3270,14 +3265,12 @@ async function importFromCSV(file) {
         const text = await file.text();
         console.log('File content preview:', text.substring(0, 200));
 
-        // פיצול לשורות ופיענוח
         const rows = text.split('\n').map(row => {
             const cells = row.split(',').map(cell => cell.trim().replace(/^"|"$/g, ''));
             console.log('Parsed row:', cells);
             return cells;
-        }).filter(row => row.length > 0); // מסנן שורות ריקות
+        }).filter(row => row.length > 0);
 
-        // הסרת שורות כותרת
         while (rows.length > 0 && (
             rows[0][0].includes('===') || 
             rows[0][0].toLowerCase().includes('subject') ||
@@ -3350,7 +3343,6 @@ async function importFromCSV(file) {
             return;
         }
 
-        // יצירת או עדכון המקצוע
         let targetSubject;
         if (importType.type === 'new') {
             targetSubject = {
@@ -3377,7 +3369,6 @@ async function importFromCSV(file) {
 
         console.log('Target subject initialized:', targetSubject);
 
-        // עיבוד הנתונים מהקובץ
         let currentTopic = null;
         let topicData = null;
 
@@ -3390,8 +3381,8 @@ async function importFromCSV(file) {
             const [subject, topicTitle, subtopicTitle, lessonsStr, notes] = row;
             console.log('Processing row:', { subject, topicTitle, subtopicTitle, lessonsStr, notes });
 
-            if (!topicTitle || !subtopicTitle) {
-                console.log('Skipping row with missing title:', row);
+            if (!topicTitle.trim()) {
+                console.log('Skipping row with empty topic:', row);
                 continue;
             }
 
@@ -3409,17 +3400,22 @@ async function importFromCSV(file) {
                 console.log('Created new topic:', topicData);
             }
 
+            const effectiveSubtopicTitle = subtopicTitle.trim() || topicTitle;
+            
             const subtopicLessons = parseInt(lessonsStr) || 1;
             topicData.lessons += subtopicLessons;
             topicData.subtopics.push({
-                title: subtopicTitle,
+                title: effectiveSubtopicTitle,
                 lessons: subtopicLessons,
                 notes: notes || ''
             });
-            console.log('Added subtopic:', { title: subtopicTitle, lessons: subtopicLessons, notes });
+            console.log('Added subtopic:', { 
+                title: effectiveSubtopicTitle, 
+                lessons: subtopicLessons, 
+                notes 
+            });
         }
 
-        // הוספת הנושא האחרון
         if (topicData) {
             console.log('Adding final topic:', topicData);
             targetSubject.topics.push(topicData);
@@ -3427,15 +3423,12 @@ async function importFromCSV(file) {
 
         console.log('Final subject data:', targetSubject);
 
-        // עדכון ה-Map
         subjects.set(targetSubject.name, targetSubject);
         console.log('Updated subjects map');
 
-        // שמירה למאגר
         saveSubjectsToStorage();
         console.log('Saved to storage');
 
-        // עדכון הממשק
         updateSubjectSelect();
         document.getElementById('subjectSelect').value = targetSubject.name;
         currentSubject = targetSubject;
@@ -3450,6 +3443,11 @@ async function importFromCSV(file) {
     } finally {
         resetFileInput();
     }
+}
+
+function resetFileInput() {
+    const fileInput = document.getElementById('csvFileInput');
+    if (fileInput) fileInput.value = '';
 }
 
 // Update the file input HTML
