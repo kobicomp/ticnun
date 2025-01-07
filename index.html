@@ -2697,7 +2697,10 @@ function handleDateChange() {
 }
 // === Hebrew Calendar Functions ===
 async function getHebrewDate(date) {
-    const dateStr = formatDate(date);
+    // הגדרת השעה ל-12 בצהריים כדי להימנע מבעיות עם אזורי זמן
+    const adjustedDate = new Date(date);
+    adjustedDate.setHours(12, 0, 0, 0);
+    const dateStr = formatDate(adjustedDate);
 
     try {
         const response = await fetch(`https://www.hebcal.com/converter?cfg=json&date=${dateStr}&g2h=1&lg=he`);
