@@ -1352,94 +1352,7 @@ function showError(message) {
 function formatDate(date) {
     return date.toISOString().split('T')[0];
 }
-function generateExportData(type = 'all') {
-    let rows = [];
 
-    if (type === 'planning' || type === 'all') {
-        rows.push(['=== תכנון שיעורים ===']);
-        rows.push(['מקצוע', 'נושא', 'תת נושא', 'מספר שיעורים', 'הערות']);
-
-        const topics = getTopicsData();
-        topics.forEach(topic => {
-            topic.subtopics.forEach(subtopic => {
-                rows.push([
-                    currentSubject.name,
-                    topic.title,
-                    subtopic.title,
-                    subtopic.lessons,
-                    subtopic.notes || ''
-                ]);
-            });
-        });
-    }
-
-    if (type === 'schedule' || type === 'all') {
-        if (rows.length > 0) rows.push([]);
-        rows.push(['=== לוז שיעורים ===']);
-        rows.push(['תאריך עברי', 'תאריך לועזי', 'יום', 'נושא', 'תת נושא']);
-
-        document.querySelectorAll('.main-table tbody tr').forEach(row => {
-            row.querySelectorAll('td').forEach((cell, index) => {
-                if (index < 2 || index > 7) return;
-                if (!cell.classList.contains('learning-day')) return;
-
-                const dateCell = row.querySelector('.gregorian-date')?.textContent;
-                const dayIndex = index - 2;
-                const dayName = weekDaysDisplay.days[dayIndex];
-
-                cell.querySelectorAll('.lesson-cell:not(.cancelled-lesson)').forEach(lesson => {
-                    rows.push([
-                        '', // תאריך עברי - יושלם בעתיד אם נדרש
-                        dateCell,
-                        dayName,
-                        lesson.querySelector('.lesson-topic')?.textContent || '',
-                        lesson.querySelector('.lesson-subtopic')?.textContent || ''
-                    ]);
-                });
-            });
-        });
-    }
-
-    return rows.map(row => 
-        row.map(cell => `"${(cell || '').toString().replace(/"/g, '""')}"`).join(',')
-    ).join('\n');
-}
-
-async function shareToGoogleDrive(type = 'all') {
-    if (!currentSubject) {
-        showError('יש לבחור מקצוע תחילה');
-        return;
-    }
-
-    try {
-        const data = generateExportData(type);
-        const blob = new Blob(['\ufeff' + data], { type: 'text/csv;charset=utf-8;' });
-        const file = new File([blob], `${currentSubject.name}_${type}.csv`, { type: 'text/csv' });
-
-        // יצירת URL זמני לקובץ
-        const fileUrl = URL.createObjectURL(blob);
-        
-        // פתיחת דיאלוג שיתוף של גוגל דרייב
-        const driveUrl = `https://drive.google.com/drive/u/0/my-drive?authuser=0`;
-        window.open(driveUrl, '_blank');
-
-        // הורדת הקובץ למחשב במקביל
-        const link = document.createElement('a');
-        link.href = fileUrl;
-        link.download = `${currentSubject.name}_${type}.csv`;
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-        
-        // שחרור המשאב
-        URL.revokeObjectURL(fileUrl);
-
-        showError('קובץ הורד. אנא גרור אותו לחלון גוגל דרייב שנפתח');
-    } catch (error) {
-        console.error('Error sharing:', error);
-        showError('שגיאה בשיתוף הקובץ');
-    }
-}
 // נוסיף את הפונקציות החדשות:
 function toggleWhatsAppMenu() {
     const menu = document.getElementById('whatsappMenu');
@@ -3621,7 +3534,33 @@ function updateTotalLessons() {
     document.getElementById('plannedLessonsValue').textContent = totalPlanned;
     document.getElementById('remainingLessonsValue').textContent = totalAvailable - totalPlanned;
 }
+async function shareToGoogleDrive(type = 'all') {
+    if (!currentSubject) {
+        showError('יש לבחור מקצוע תחילה');
+        return;
+    }
 
+    try {
+        // יצירת הקובץ
+        const data = generateExportData(type);
+        const blob = new Blob(['\ufeff' + data], { type: 'text/csv;charset=utf-8;' });
+        const file = new File([blob], `${currentSubject.name}_${type}.csv`, { type: 'text/csv' });
+
+        // שיתוף באמצעות Web Share API
+        if (navigator.share) {
+            await navigator.share({
+                files: [file],
+                title: `תכנון ${currentSubject.name}`,
+                text: 'קובץ תכנון לימודים'
+            });
+        } else {
+            showError('דפדפן זה אינו תומך בשיתוף ישיר');
+        }
+    } catch (error) {
+        console.error('Error sharing:', error);
+        showError('שגיאה בשיתוף הקובץ');
+    }
+}
 function togglePlanningSection() {
     if (!currentSubject) {
         showError('יש לבחור מקצוע תחילה');
