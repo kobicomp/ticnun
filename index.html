@@ -1959,23 +1959,37 @@ function updateLessonDisplay(cell) {
 
 // פונקציה חדשה להוספת שיעור
 function addLesson(cell) {
-    if (!currentSubject || cell.classList.contains('non-learning-day')) {
-        showError('לא ניתן להוסיף שיעור');
+    if (!currentSubject) {
+        showError('יש לבחור מקצוע תחילה');
+        return;
+    }
+
+    if (cell.classList.contains('non-learning-day')) {
+        showError('לא ניתן להוסיף שיעור ביום ללא לימודים');
+        return;
+    }
+
+    const row = cell.closest('tr');
+    const dateCell = row.querySelector('.gregorian-date');
+    const date = dateCell?.textContent;
+    const dayIndex = Array.from(row.children).indexOf(cell) - 2;
+
+    // בדיקה אם היום מבוטל
+    const isDayCancelled = currentSubject.lessonChanges?.cancelledDays?.some(d =>
+        d.date === date && d.dayIndex === dayIndex);
+
+    if (isDayCancelled) {
+        showError('לא ניתן להוסיף שיעור ליום מבוטל. יש לבטל את ביטול היום קודם.');
         return;
     }
 
     if (confirm('האם להוסיף שיעור ליום זה?')) {
         initLessonChanges();
 
-        const row = cell.closest('tr');
-        const dateCell = row.querySelector('.gregorian-date');
-        const date = dateCell?.textContent;
-        const dayIndex = Array.from(row.children).indexOf(cell) - 2;
-
         // איסוף שיעורים עתידיים
         const futureLessons = [];
         let foundCurrent = false;
-        
+
         document.querySelectorAll('.main-table tbody tr').forEach(tableRow => {
             tableRow.querySelectorAll('td').forEach((tableCell, index) => {
                 if (index < 2 || index > 7) return;
@@ -1983,23 +1997,23 @@ function addLesson(cell) {
 
                 const cellDate = tableRow.querySelector('.gregorian-date')?.textContent;
                 const cellDayIndex = index - 2;
-                
+
                 // בדיקה אם היום או התא מבוטלים
-                const isDayCancelled = currentSubject.lessonChanges.cancelledDays.some(d => 
+                const isDayCancelled = currentSubject.lessonChanges.cancelledDays.some(d =>
                     d.date === cellDate && d.dayIndex === cellDayIndex);
                 if (isDayCancelled) return;
 
                 if (foundCurrent || (cellDate === date && cellDayIndex === dayIndex)) {
                     foundCurrent = true;
                     const lessons = tableCell.querySelectorAll('.lesson-cell');
-                    
+
                     lessons.forEach((lesson, lessonIndex) => {
                         // בדיקה אם השיעור הספציפי מבוטל
                         const isLessonCancelled = currentSubject.lessonChanges.cancelledLessons.some(l =>
-                            l.date === cellDate && 
-                            l.dayIndex === cellDayIndex && 
+                            l.date === cellDate &&
+                            l.dayIndex === cellDayIndex &&
                             l.lessonIndex === lessonIndex);
-                            
+
                         if (!isLessonCancelled) {
                             futureLessons.push({
                                 topic: lesson.querySelector('.lesson-topic')?.textContent || '',
@@ -2024,7 +2038,7 @@ function addLesson(cell) {
                 if (!currentCell || !currentCell.classList.contains('learning-day')) {
                     currentRow = currentRow.nextElementSibling;
                     if (!currentRow) break;
-                    
+
                     for (const cell of Array.from(currentRow.children).slice(2, 8)) {
                         if (cell.classList.contains('learning-day')) {
                             currentCell = cell;
@@ -2036,11 +2050,11 @@ function addLesson(cell) {
 
                 const cellDate = currentRow.querySelector('.gregorian-date')?.textContent;
                 const cellDayIndex = Array.from(currentRow.children).indexOf(currentCell) - 2;
-                
+
                 // בדיקה אם היום מבוטל
-                const isDayCancelled = currentSubject.lessonChanges.cancelledDays.some(d => 
+                const isDayCancelled = currentSubject.lessonChanges.cancelledDays.some(d =>
                     d.date === cellDate && d.dayIndex === cellDayIndex);
-                
+
                 if (!isDayCancelled) {
                     const lessonsContainer = currentCell.querySelector('.lessons-container');
                     if (lessonsContainer) {
@@ -2066,20 +2080,23 @@ function addLesson(cell) {
             a.date === date && a.dayIndex === dayIndex
         )) {
             currentSubject.lessonChanges.added.push({ date, dayIndex });
-            
+
             const currentLessons = parseInt(cell.dataset.lessons) || 0;
             cell.dataset.lessons = (currentLessons + 1).toString();
-            
+
             cell.classList.remove('potential-learning-day');
             cell.classList.add('learning-day', 'added-lesson');
-            
-            if (!cell.querySelector('.lessons-container')) {
-                cell.appendChild(document.createElement('div')).className = 'lessons-container';
-            }
-        }
 
-        saveSubjectsToStorage();
-        validateAndPlan();
+            if (!cell.querySelector('.lessons-container')) {
+                const container = document.createElement('div');
+                container.className = 'lessons-container';
+                cell.appendChild(container);
+            }
+
+            // עדכון בדאטה
+            saveSubjectsToStorage();
+            validateAndPlan();
+        }
     }
 }
 
