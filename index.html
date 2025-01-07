@@ -2000,23 +2000,23 @@ function addLesson(cell) {
     // איסוף שיעורים עתידיים
     const futureLessons = [];
     let foundCurrent = false;
-    
+
     document.querySelectorAll('.main-table tbody tr').forEach(tableRow => {
         const rowDate = tableRow.querySelector('.gregorian-date')?.textContent;
         if (!rowDate) return;
 
         const currentRowIsAfter = parseDate(rowDate) >= parseDate(date);
-        
+
         tableRow.querySelectorAll('td').forEach((tableCell, index) => {
             if (index < 2 || index > 7) return;
             if (!tableCell.classList.contains('learning-day')) return;
 
             const cellDayIndex = index - 2;
-            
-            if (currentRowIsAfter && 
-                (foundCurrent || 
+
+            if (currentRowIsAfter &&
+                (foundCurrent ||
                 (rowDate === date && cellDayIndex >= dayIndex))) {
-                
+
                 foundCurrent = true;
                 const lessons = tableCell.querySelectorAll('.lesson-cell:not(.cancelled-lesson)');
                 lessons.forEach(lesson => {
@@ -2035,7 +2035,7 @@ function addLesson(cell) {
         for (let i = 0; i < futureLessons.length - 1; i++) {
             const currentLesson = futureLessons[i];
             const nextLesson = futureLessons[i + 1];
-            
+
             const lessonElement = currentLesson.cell.querySelector('.lesson-cell');
             if (lessonElement) {
                 lessonElement.querySelector('.lesson-topic').textContent = nextLesson.topic;
@@ -2055,11 +2055,11 @@ function addLesson(cell) {
         a.date === date && a.dayIndex === dayIndex
     )) {
         currentSubject.lessonChanges.added.push({ date, dayIndex });
-        
+
         const currentLessons = parseInt(cell.dataset.lessons) || 0;
         cell.dataset.lessons = (currentLessons + 1).toString();
         cell.dataset.original_lessons = cell.dataset.lessons;
-        
+
         // הוספת מיכל לשיעורים אם לא קיים
         if (!cell.querySelector('.lessons-container')) {
             const container = document.createElement('div');
@@ -3262,11 +3262,15 @@ async function importFromCSV(file) {
 
     try {
         const text = await file.text();
-        const rows = text.split('\n').map(row =>
-            row.split(',').map(cell =>
-                cell.trim().replace(/^"|"$/g, '')));
+        console.log('CSV Content:', text.substring(0, 200)); // בדיקת תוכן הקובץ
 
-        // הסרת שורת כותרת אם קיימת
+        const rows = text.split('\n').map(row => {
+            const cells = row.split(',').map(cell => cell.trim().replace(/^"|"$/g, ''));
+            console.log('Parsed Row:', cells); // בדיקת השורות המפוענחות
+            return cells;
+        });
+
+        // הסרת שורות כותרת
         if (rows[0]?.[0]?.includes('===') || rows[0]?.[0]?.toLowerCase().includes('subject')) {
             rows.shift();
         }
@@ -3274,7 +3278,6 @@ async function importFromCSV(file) {
         // בחירת סוג הייבוא
         const importType = await new Promise(resolve => {
             if (confirm('האם לייבא למקצוע חדש? לחץ "אישור" לחדש או "ביטול" למקצוע קיים')) {
-                // ייבוא למקצוע חדש
                 const name = prompt('הכנס שם למקצוע החדש:');
                 if (!name) {
                     resolve(null);
@@ -3287,14 +3290,12 @@ async function importFromCSV(file) {
                 }
                 resolve({ type: 'new', name });
             } else {
-                // ייבוא למקצוע קיים
                 if (subjects.size === 0) {
                     showError('אין מקצועות קיימים');
                     resolve(null);
                     return;
                 }
 
-                // יצירת רשימת המקצועות הקיימים
                 const subjectsList = Array.from(subjects.keys());
                 let selectHtml = 'בחר מקצוע:\n\n';
                 subjectsList.forEach((subject, index) => {
@@ -3337,7 +3338,12 @@ async function importFromCSV(file) {
                 topics: [],
                 startDate: document.getElementById('startDate').value,
                 endDate: document.getElementById('endDate').value,
-                lastUpdate: new Date().toISOString()
+                lastUpdate: new Date().toISOString(),
+                lessonChanges: {
+                    cancelledLessons: [],
+                    cancelledDays: [],
+                    added: []
+                }
             };
             subjects.set(importType.name, targetSubject);
         } else {
@@ -3353,13 +3359,22 @@ async function importFromCSV(file) {
         let topicData = null;
 
         for (const row of rows) {
-            if (row.length < 4) continue;
+            console.log('Processing row:', row); // בדיקת שורה נוכחית
+
+            if (row.length < 4) {
+                console.log('Row too short, skipping:', row);
+                continue;
+            }
 
             const [_, topicTitle, subtopicTitle, lessons, notes] = row;
-            if (!topicTitle || !subtopicTitle) continue;
+            if (!topicTitle || !subtopicTitle) {
+                console.log('Missing title, skipping:', row);
+                continue;
+            }
 
             if (!currentTopic || currentTopic !== topicTitle) {
                 if (topicData) {
+                    console.log('Adding topic:', topicData);
                     targetSubject.topics.push(topicData);
                 }
                 currentTopic = topicTitle;
@@ -3381,8 +3396,11 @@ async function importFromCSV(file) {
 
         // הוספת הנושא האחרון
         if (topicData) {
+            console.log('Adding final topic:', topicData);
             targetSubject.topics.push(topicData);
         }
+
+        console.log('Final subject data:', targetSubject); // בדיקת נתוני המקצוע הסופיים
 
         // עדכון ה-Map
         subjects.set(targetSubject.name, targetSubject);
@@ -3392,15 +3410,9 @@ async function importFromCSV(file) {
 
         // עדכון הממשק
         updateSubjectSelect();
-
-        // בחירת המקצוע החדש/מעודכן
         document.getElementById('subjectSelect').value = targetSubject.name;
-
-        // טעינת הנתונים לממשק
         currentSubject = targetSubject;
         await loadSubjectData();
-
-        // עדכון הטבלה
         await generateTable();
 
         showError('הנתונים יובאו בהצלחה');
@@ -3409,7 +3421,7 @@ async function importFromCSV(file) {
         console.error('Error importing CSV:', error);
         showError('שגיאה בקריאת הקובץ');
     } finally {
-        resetFileInput(); // Reset file input in all cases
+        resetFileInput();
     }
 }
 
