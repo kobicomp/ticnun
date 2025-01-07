@@ -1329,167 +1329,129 @@ function showError(message) {
 function formatDate(date) {
     return date.toISOString().split('T')[0];
 
-    async function printContent(type = 'all') {
-        if (!currentSubject) {
-            showError('יש לבחור מקצוע תחילה');
-            return;
-        }
-    
-        const printWindow = window.open('', '_blank');
-        let content = `
-            <html dir="rtl">
-            <head>
-                <title>הדפסת ${currentSubject.name}</title>
-                <style>
-                    body {
-                        font-family: Arial, sans-serif;
-                        padding: 20px;
+async function printContent(type = 'all') {
+    if (!currentSubject) {
+        showError('יש לבחור מקצוע תחילה');
+        return;
+    }
+
+    // יצירת חלון הדפסה חדש
+    const printWindow = window.open('', '_blank');
+
+    // הכנת תוכן להדפסה
+    let content = `
+        <html dir="rtl">
+        <head>
+            <title>הדפסת ${currentSubject.name}</title>
+            <style>
+                body {
+                    font-family: Arial, sans-serif;
+                    padding: 20px;
+                }
+                .print-header {
+                    text-align: center;
+                    margin-bottom: 20px;
+                }
+                .print-header h1 {
+                    color: #1a237e;
+                    margin-bottom: 10px;
+                }
+                .print-header h2 {
+                    color: #666;
+                    font-size: 16px;
+                }
+                table {
+                    width: 100%;
+                    border-collapse: collapse;
+                    margin: 20px 0;
+                }
+                th, td {
+                    border: 1px solid #ccc;
+                    padding: 8px;
+                    text-align: right;
+                }
+                th {
+                    background-color: #e3f2fd;
+                }
+                .topic-title {
+                    font-weight: bold;
+                    color: #1a237e;
+                }
+                .subtopic {
+                    padding-right: 20px;
+                }
+                .lesson-cell {
+                    margin: 5px 0;
+                    padding: 5px;
+                    border-bottom: 1px solid #eee;
+                }
+                .page-break {
+                    page-break-before: always;
+                }
+                @media print {
+                    .no-print {
+                        display: none;
                     }
-                    .print-header {
-                        text-align: center;
-                        margin-bottom: 20px;
-                    }
-                    table {
-                        width: 100%;
-                        border-collapse: collapse;
-                        margin: 20px 0;
-                    }
-                    th, td {
-                        border: 1px solid #ccc;
-                        padding: 8px;
-                        text-align: right;
-                    }
-                    th {
-                        background-color: #e3f2fd;
-                    }
-                    .lesson-cell {
-                        margin: 5px 0;
-                        padding: 5px;
-                        border-bottom: 1px solid #eee;
-                    }
-                </style>
-            </head>
-            <body>
-                <div class="print-header">
-                    <h1>${currentSubject.name}</h1>
-                    <h2>נוצר בתאריך: ${new Date().toLocaleDateString('he-IL')}</h2>
-                </div>
+                }
+            </style>
+        </head>
+        <body>
+            <div class="print-header">
+                <h1>${currentSubject.name}</h1>
+                <h2>נוצר בתאריך: ${new Date().toLocaleDateString('he-IL')}</h2>
+            </div>
+    `;
+
+    // הוספת תכנון
+    if (type === 'planning' || type === 'all') {
+        content += `
+            <h2>תכנון שיעורים</h2>
+            <table>
+                <thead>
+                    <tr>
+                        <th>נושא</th>
+                        <th>תת נושא</th>
+                        <th>מספר שיעורים</th>
+                        <th>הערות</th>
+                    </tr>
+                </thead>
+                <tbody>
         `;
-    
-        // הדפסת תכנון
-        if (type === 'planning' || type === 'all') {
-            content += `
-                <h2>תכנון שיעורים</h2>
-                <table>
-                    <thead>
-                        <tr>
-                            <th>נושא</th>
-                            <th>תת נושא</th>
-                            <th>מספר שיעורים</th>
-                            <th>הערות</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-            `;
-    
-            const topics = getTopicsData();
-            topics.forEach(topic => {
-                topic.subtopics.forEach((subtopic, index) => {
-                    content += `
-                        <tr>
-                            <td>${index === 0 ? topic.title : ''}</td>
-                            <td>${subtopic.title}</td>
-                            <td>${subtopic.lessons}</td>
-                            <td>${subtopic.notes || ''}</td>
-                        </tr>
-                    `;
-                });
-            });
-    
-            content += '</tbody></table>';
-        }
-    
-        // הדפסת לוז
-        if (type === 'schedule' || type === 'all') {
-            if (type === 'all') content += '<div style="page-break-before: always;"></div>';
-            
-            content += `
-                <h2>לוח שיעורים</h2>
-                <table>
-                    <thead>
-                        <tr>
-                            <th>תאריך</th>
-                            <th>יום</th>
-                            <th>שיעורים</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-            `;
-    
-            // איסוף השיעורים המתוכננים
-            const scheduledLessons = [];
-            document.querySelectorAll('.main-table tbody tr').forEach(row => {
-                const firstDateCell = row.querySelector('.date-cell');
-                if (!firstDateCell) return;
-    
-                row.querySelectorAll('td').forEach(async (cell, index) => {
-                    if (index < 2 || index > 7) return; // דילוג על תאי תאריך וסה"כ
-                    if (!cell.classList.contains('learning-day')) return;
-                    
-                    const dayDate = getDayDate(row, index - 2);
-                    if (!dayDate) return;
-    
-                    const hebrewDate = await getHebrewDate(dayDate);
-                    const lessons = cell.querySelectorAll('.lesson-cell:not(.cancelled-lesson)');
-                    
-                    if (lessons.length && !cell.classList.contains('cancelled-day')) {
-                        scheduledLessons.push({
-                            date: dayDate,
-                            hebrewDate: hebrewDate,
-                            dayIndex: index - 2,
-                            lessons: Array.from(lessons).map(lesson => ({
-                                topic: lesson.querySelector('.lesson-topic')?.textContent || '',
-                                subtopic: lesson.querySelector('.lesson-subtopic')?.textContent || ''
-                            }))
-                        });
-                    }
-                });
-            });
-    
-            // מיון לפי תאריך
-            scheduledLessons.sort((a, b) => a.date - b.date);
-    
-            // הוספת השיעורים לטבלה
-            scheduledLessons.forEach(daySchedule => {
+
+        const topics = getTopicsData();
+        topics.forEach(topic => {
+            topic.subtopics.forEach((subtopic, index) => {
                 content += `
                     <tr>
-                        <td>${daySchedule.hebrewDate ? daySchedule.hebrewDate.hebrew : ''} (${formatLocalDate(daySchedule.date)})</td>
-                        <td>${weekDaysDisplay.days[daySchedule.dayIndex]}</td>
-                        <td>
-                            ${daySchedule.lessons.map(lesson => `
-                                <div class="lesson-cell">
-                                    <div class="lesson-topic">${lesson.topic}</div>
-                                    <div class="lesson-subtopic">${lesson.subtopic}</div>
-                                </div>
-                            `).join('')}
-                        </td>
+                        <td>${index === 0 ? topic.title : ''}</td>
+                        <td>${subtopic.title}</td>
+                        <td>${subtopic.lessons}</td>
+                        <td>${subtopic.notes || ''}</td>
                     </tr>
                 `;
             });
-    
-            content += '</tbody></table>';
-        }
-    
-        content += '</body></html>';
-    
-        printWindow.document.write(content);
-        printWindow.document.close();
-    
-        setTimeout(() => {
-            printWindow.print();
-            printWindow.close();
-        }, 250);
+        });
+
+        content += '</tbody></table>';
     }
+
+    // הוספת לוז
+
+
+    content += `
+        </body></html>
+    `;
+
+    // כתיבת התוכן לחלון ההדפסה
+    printWindow.document.write(content);
+    printWindow.document.close();
+
+    // הדפסה
+    setTimeout(() => {
+        printWindow.print();
+        printWindow.close();
+    }, 250);
+}
 // ראשית נעדכן את ה-HTML בחלק של הכפתורים:
 /*
 <div class="dropdown">
