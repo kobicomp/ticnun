@@ -1163,42 +1163,47 @@ td.non-learning-day {
 
        <!-- בחירת מקצוע -->
 <div class="subjects-section">
-  <div class="subject-controls">
-    <select id="subjectSelect" class="subject-select" onchange="handleSubjectChange()">
-        <option value="">בחר מקצוע</option>
-    </select>
+<!-- בתוך div class="subject-controls" -->
+<div class="subject-controls">
+  <select id="subjectSelect" class="subject-select" onchange="handleSubjectChange()">
+      <option value="">בחר מקצוע</option>
+  </select>
 
-    <button onclick="toggleAddSubjectForm()">הוסף מקצוע</button>
-    <button onclick="deleteCurrentSubject()" class="delete-btn">מחק מקצוע</button>
+  <button onclick="toggleAddSubjectForm()">הוסף מקצוע</button>
+  <button onclick="deleteCurrentSubject()" class="delete-btn">מחק מקצוע</button>
 
-        <!-- העברת כפתורי הייצוא וההדפסה -->
-        <div class="dropdown">
-        <button onclick="toggleExportMenu()">ייצוא ⌄</button>
-        <div id="exportMenu" class="dropdown-content">
-            <a onclick="handleExportClick('planning')">ייצוא תכנון</a>
-            <a onclick="handleExportClick('schedule')">ייצוא לוז</a>
-            <a onclick="handleExportClick('all')">ייצוא הכל</a>
-        </div>
-    </div>
-    <div class="dropdown">
-        <button onclick="toggleWhatsAppMenu()">שלח בווטסאפ ⌄</button>
-        <div id="whatsappMenu" class="dropdown-content">
-            <a onclick="sendToWhatsApp('planning')">שלח תכנון</a>
-            <a onclick="sendToWhatsApp('schedule')">שלח לוז</a>
-            <a onclick="sendToWhatsApp('all')">שלח הכל</a>
-        </div>
-    </div>
-        <div class="dropdown">
-            <button onclick="togglePrintMenu()">הדפסה ⌄</button>
-            <div id="printMenu" class="dropdown-content">
-                <a onclick="printContent('planning')">הדפס תכנון</a>
-                <a onclick="printContent('schedule')">הדפס לוז</a>
-                <a onclick="printContent('all')">הדפס הכל</a>
-            </div>
-        </div>
-        <input type="file" id="csvFileInput" accept=".csv" style="display: none" onchange="importFromCSV(this.files[0])">
-        <button onclick="document.getElementById('csvFileInput').click()">ייבא תכנון</button>
-    </div>
+  <div class="dropdown">
+      <button onclick="toggleExportMenu()">ייצוא ⌄</button>
+      <div id="exportMenu" class="dropdown-content">
+          <a onclick="handleExportClick('planning')">ייצוא תכנון</a>
+          <a onclick="handleExportClick('schedule')">ייצוא לוז</a>
+          <a onclick="handleExportClick('all')">ייצוא הכל</a>
+      </div>
+  </div>
+
+  <button onclick="shareToGoogleDrive()">שמור בגוגל דרייב</button>
+
+  <div class="dropdown">
+      <button onclick="toggleWhatsAppMenu()">שלח בווטסאפ ⌄</button>
+      <div id="whatsappMenu" class="dropdown-content">
+          <a onclick="sendToWhatsApp('planning')">שלח תכנון</a>
+          <a onclick="sendToWhatsApp('schedule')">שלח לוז</a>
+          <a onclick="sendToWhatsApp('all')">שלח הכל</a>
+      </div>
+  </div>
+
+  <div class="dropdown">
+      <button onclick="togglePrintMenu()">הדפסה ⌄</button>
+      <div id="printMenu" class="dropdown-content">
+          <a onclick="printContent('planning')">הדפס תכנון</a>
+          <a onclick="printContent('schedule')">הדפס לוז</a>
+          <a onclick="printContent('all')">הדפס הכל</a>
+      </div>
+  </div>
+
+  <input type="file" id="csvFileInput" accept=".csv" style="display: none" onchange="importFromCSV(this.files[0])">
+  <button onclick="document.getElementById('csvFileInput').click()">ייבא תכנון</button>
+</div>
     <div id="addSubjectForm">
         <input type="text" id="newSubjectInput" placeholder="שם המקצוע">
         <button onclick="addNewSubject()">שמור מקצוע</button>
@@ -3268,7 +3273,7 @@ async function importFromCSV(file) {
 
         // הסרת שורות כותרת
         while (rows.length > 0 && (
-            rows[0][0].includes('===') || 
+            rows[0][0].includes('===') ||
             rows[0][0].toLowerCase().includes('subject') ||
             rows[0][0].toLowerCase().includes('מקצוע')
         )) {
@@ -3528,6 +3533,33 @@ function updateTotalLessons() {
 
     document.getElementById('plannedLessonsValue').textContent = totalPlanned;
     document.getElementById('remainingLessonsValue').textContent = totalAvailable - totalPlanned;
+}
+async function shareToGoogleDrive(type = 'all') {
+    if (!currentSubject) {
+        showError('יש לבחור מקצוע תחילה');
+        return;
+    }
+
+    try {
+        // יצירת הקובץ
+        const data = generateExportData(type);
+        const blob = new Blob(['\ufeff' + data], { type: 'text/csv;charset=utf-8;' });
+        const file = new File([blob], `${currentSubject.name}_${type}.csv`, { type: 'text/csv' });
+
+        // שיתוף באמצעות Web Share API
+        if (navigator.share) {
+            await navigator.share({
+                files: [file],
+                title: `תכנון ${currentSubject.name}`,
+                text: 'קובץ תכנון לימודים'
+            });
+        } else {
+            showError('דפדפן זה אינו תומך בשיתוף ישיר');
+        }
+    } catch (error) {
+        console.error('Error sharing:', error);
+        showError('שגיאה בשיתוף הקובץ');
+    }
 }
 function togglePlanningSection() {
     if (!currentSubject) {
