@@ -1959,13 +1959,8 @@ function updateLessonDisplay(cell) {
 
 // פונקציה חדשה להוספת שיעור
 function addLesson(cell) {
-    if (!currentSubject) {
-        showError('יש לבחור מקצוע תחילה');
-        return;
-    }
-
-    if (cell.classList.contains('non-learning-day')) {
-        showError('לא ניתן להוסיף שיעור ביום ללא לימודים');
+    if (!currentSubject || cell.classList.contains('non-learning-day')) {
+        showError('לא ניתן להוסיף שיעור');
         return;
     }
 
@@ -1974,12 +1969,13 @@ function addLesson(cell) {
 
         const row = cell.closest('tr');
         const dateCell = row.querySelector('.gregorian-date');
-        const date = dateCell ? dateCell.textContent : '';
+        const date = dateCell?.textContent;
         const dayIndex = Array.from(row.children).indexOf(cell) - 2;
 
-        // מציאת כל השיעורים העתידיים
+        // איסוף שיעורים עתידיים
         const futureLessons = [];
         let foundCurrent = false;
+        
         document.querySelectorAll('.main-table tbody tr').forEach(tableRow => {
             tableRow.querySelectorAll('td').forEach((tableCell, index) => {
                 if (index < 2 || index > 7) return;
@@ -1988,15 +1984,28 @@ function addLesson(cell) {
                 const cellDate = tableRow.querySelector('.gregorian-date')?.textContent;
                 const cellDayIndex = index - 2;
                 
-                // בדיקה אם זה שיעור עתידי
+                // בדיקה אם היום או התא מבוטלים
+                const isDayCancelled = currentSubject.lessonChanges.cancelledDays.some(d => 
+                    d.date === cellDate && d.dayIndex === cellDayIndex);
+                if (isDayCancelled) return;
+
                 if (foundCurrent || (cellDate === date && cellDayIndex === dayIndex)) {
                     foundCurrent = true;
-                    const lessons = tableCell.querySelectorAll('.lesson-cell:not(.cancelled-lesson)');
-                    lessons.forEach(lesson => {
-                        futureLessons.push({
-                            topic: lesson.querySelector('.lesson-topic')?.textContent || '',
-                            subtopic: lesson.querySelector('.lesson-subtopic')?.textContent || ''
-                        });
+                    const lessons = tableCell.querySelectorAll('.lesson-cell');
+                    
+                    lessons.forEach((lesson, lessonIndex) => {
+                        // בדיקה אם השיעור הספציפי מבוטל
+                        const isLessonCancelled = currentSubject.lessonChanges.cancelledLessons.some(l =>
+                            l.date === cellDate && 
+                            l.dayIndex === cellDayIndex && 
+                            l.lessonIndex === lessonIndex);
+                            
+                        if (!isLessonCancelled) {
+                            futureLessons.push({
+                                topic: lesson.querySelector('.lesson-topic')?.textContent || '',
+                                subtopic: lesson.querySelector('.lesson-subtopic')?.textContent || ''
+                            });
+                        }
                     });
                 }
             });
@@ -2006,7 +2015,7 @@ function addLesson(cell) {
             // הסרת השיעור האחרון
             futureLessons.pop();
 
-            // הזזת כל השיעורים אחורה
+            // הזזת שיעורים אחורה
             let currentRow = row;
             let currentCell = cell;
             let lessonIndex = 0;
@@ -2016,27 +2025,36 @@ function addLesson(cell) {
                     currentRow = currentRow.nextElementSibling;
                     if (!currentRow) break;
                     
-                    // מציאת התא הבא עם שיעורים
-                    Array.from(currentRow.children).slice(2, 8).forEach(cell => {
+                    for (const cell of Array.from(currentRow.children).slice(2, 8)) {
                         if (cell.classList.contains('learning-day')) {
                             currentCell = cell;
+                            break;
                         }
-                    });
+                    }
                     continue;
                 }
 
-                const lessonsContainer = currentCell.querySelector('.lessons-container');
-                if (lessonsContainer) {
-                    const lesson = futureLessons[lessonIndex];
-                    const lessonElement = document.createElement('div');
-                    lessonElement.className = 'lesson-cell';
-                    lessonElement.innerHTML = `
-                        <button class="cancel-lesson-btn" onclick="cancelLesson(this.closest('td'), this.closest('.lesson-cell'))">⊖</button>
-                        <div class="lesson-topic">${lesson.topic}</div>
-                        <div class="lesson-subtopic">${lesson.subtopic}</div>
-                    `;
-                    lessonsContainer.appendChild(lessonElement);
-                    lessonIndex++;
+                const cellDate = currentRow.querySelector('.gregorian-date')?.textContent;
+                const cellDayIndex = Array.from(currentRow.children).indexOf(currentCell) - 2;
+                
+                // בדיקה אם היום מבוטל
+                const isDayCancelled = currentSubject.lessonChanges.cancelledDays.some(d => 
+                    d.date === cellDate && d.dayIndex === cellDayIndex);
+                
+                if (!isDayCancelled) {
+                    const lessonsContainer = currentCell.querySelector('.lessons-container');
+                    if (lessonsContainer) {
+                        const lesson = futureLessons[lessonIndex];
+                        const lessonElement = document.createElement('div');
+                        lessonElement.className = 'lesson-cell';
+                        lessonElement.innerHTML = `
+                            <button class="cancel-lesson-btn" onclick="cancelLesson(this.closest('td'), this.closest('.lesson-cell'))">⊖</button>
+                            <div class="lesson-topic">${lesson.topic}</div>
+                            <div class="lesson-subtopic">${lesson.subtopic}</div>
+                        `;
+                        lessonsContainer.appendChild(lessonElement);
+                        lessonIndex++;
+                    }
                 }
 
                 currentCell = currentCell.nextElementSibling;
@@ -2044,29 +2062,19 @@ function addLesson(cell) {
         }
 
         // הוספת השיעור החדש
-        const lessonId = {
-            date: date,
-            dayIndex: dayIndex
-        };
-
         if (!currentSubject.lessonChanges.added.some(a =>
-            a.date === lessonId.date && a.dayIndex === lessonId.dayIndex
+            a.date === date && a.dayIndex === dayIndex
         )) {
-            currentSubject.lessonChanges.added.push(lessonId);
+            currentSubject.lessonChanges.added.push({ date, dayIndex });
             
-            // עדכון מספר השיעורים
             const currentLessons = parseInt(cell.dataset.lessons) || 0;
             cell.dataset.lessons = (currentLessons + 1).toString();
-
-            // עדכון המראה
+            
             cell.classList.remove('potential-learning-day');
-            cell.classList.add('learning-day');
-            cell.classList.add('added-lesson');
-
+            cell.classList.add('learning-day', 'added-lesson');
+            
             if (!cell.querySelector('.lessons-container')) {
-                const container = document.createElement('div');
-                container.className = 'lessons-container';
-                cell.appendChild(container);
+                cell.appendChild(document.createElement('div')).className = 'lessons-container';
             }
         }
 
