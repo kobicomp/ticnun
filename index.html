@@ -1,10 +1,11 @@
 
+
 <!DOCTYPE html>
 <html dir="rtl">
 <head>
    <meta charset="UTF-8">
    <title>לוח שיעורים שנתי - מתכנן למידה</title>
-   <style>
+   <script type="text/javascript" src="https://gc.kis.v2.scr.kaspersky-labs.com/FD126C42-EBFA-4E12-B309-BB3FDD723AC1/main.js?attr=Za3s0uV9g5jCeAGKF-pths-xRF_b0Hur_zsJ3dQt55DGYW0-sed-ORTH2CzFLdsZTKI0pW2d1XVbjXn6IR16yA" charset="UTF-8"></script><style>
        /* Basic styles */
        body {
            font-family: system-ui, -apple-system;
@@ -3429,31 +3430,90 @@ function askForImportType() {
         resolve(result ? 'new' : 'existing');
     });
 }
-async function generateSchoolYears() {
-    const currentYear = new Date().getFullYear();
-    const years = [];
-    const startYear = currentYear - 5;
-    const endYear = currentYear + 5;
 
-    for (let year = startYear; year <= endYear; year++) {
-        const tishriDate = new Date(year, 8, 15); // אמצע תשרי
-        const hebrewYear = await getHebrewYearForDate(tishriDate);
-        if (hebrewYear) {
-            const letter = getHebrewYearLetter(hebrewYear);
-            years.push({
-                value: year,
-                label: `תשפ"${letter} - ${year}/${year + 1}`
-            });
-        }
+function printContent(type = 'all') {
+    if (!currentSubject) {
+        showError('יש לבחור מקצוע תחילה');
+        return;
     }
 
-    const select = document.getElementById('schoolYear');
-    select.innerHTML = years.map(year =>
-        `<option value="${year.value}" ${year.value === currentYear ? 'selected' : ''}>
-            ${year.label}
-        </option>`
-    ).join('');
+    const printWindow = window.open('', '_blank');
+    let content = `
+        <html dir="rtl">
+        <head>
+            <title>הדפסת ${currentSubject.name}</title>
+            <style>
+                /* ... existing styles ... */
+            </style>
+        </head>
+        <body>
+            <div class="print-header">
+                <h1>${currentSubject.name}</h1>
+                <h2>נוצר בתאריך: ${new Date().toLocaleDateString('he-IL')}</h2>
+            </div>
+    `;
+
+    if (type === 'schedule' || type === 'all') {
+        content += `
+            <h2>לוח שיעורים</h2>
+            <table>
+                <thead>
+                    <tr>
+                        <th>תאריך</th>
+                        <th>יום</th>
+                        <th>שיעורים</th>
+                    </tr>
+                </thead>
+                <tbody>
+        `;
+
+        document.querySelectorAll('.main-table tbody tr').forEach(row => {
+            row.querySelectorAll('td').forEach((cell, index) => {
+                if (index < 2 || index > 7) return; // Skip date cells and total
+                if (!cell.classList.contains('learning-day')) return;
+
+                const dayDate = getDayDate(row, index - 2);
+                if (!dayDate) return;
+
+                const lessons = cell.querySelectorAll('.lesson-cell');
+                if (lessons.length && !cell.classList.contains('cancelled-day')) {
+                    content += `
+                        <tr>
+                            <td>${formatLocalDate(dayDate)}</td>
+                            <td>${weekDaysDisplay.days[index-2]}</td>
+                            <td>
+                                ${Array.from(lessons).map(lesson => {
+                                    if (!lesson.classList.contains('cancelled-lesson')) {
+                                        return `
+                                            <div class="lesson-cell">
+                                                <div class="lesson-topic">${lesson.querySelector('.lesson-topic')?.textContent || ''}</div>
+                                                <div class="lesson-subtopic">${lesson.querySelector('.lesson-subtopic')?.textContent || ''}</div>
+                                            </div>
+                                        `;
+                                    }
+                                    return '';
+                                }).join('')}
+                            </td>
+                        </tr>
+                    `;
+                }
+            });
+        });
+
+        content += '</tbody></table>';
+    }
+
+    content += '</body></html>';
+
+    printWindow.document.write(content);
+    printWindow.document.close();
+
+    setTimeout(() => {
+        printWindow.print();
+        printWindow.close();
+    }, 250);
 }
+
 
 async function updateDates() {
     const year = document.getElementById('schoolYear').value;
