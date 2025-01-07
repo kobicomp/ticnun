@@ -1401,7 +1401,7 @@ function parseDate(dateStr) {
     }
     return new Date(dateStr);
 }
-sync function printContent(type = 'all') {
+function printContent(type = 'all') {
     if (!currentSubject) {
         showError('יש לבחור מקצוע תחילה');
         return;
