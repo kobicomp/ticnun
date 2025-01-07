@@ -1401,7 +1401,7 @@ function parseDate(dateStr) {
     }
     return new Date(dateStr);
 }
-function printContent(type = 'all') {
+sync function printContent(type = 'all') {
     if (!currentSubject) {
         showError('יש לבחור מקצוע תחילה');
         return;
@@ -1413,7 +1413,32 @@ function printContent(type = 'all') {
         <head>
             <title>הדפסת ${currentSubject.name}</title>
             <style>
-                /* ... existing styles ... */
+                body {
+                    font-family: Arial, sans-serif;
+                    padding: 20px;
+                }
+                .print-header {
+                    text-align: center;
+                    margin-bottom: 20px;
+                }
+                table {
+                    width: 100%;
+                    border-collapse: collapse;
+                    margin: 20px 0;
+                }
+                th, td {
+                    border: 1px solid #ccc;
+                    padding: 8px;
+                    text-align: right;
+                }
+                th {
+                    background-color: #e3f2fd;
+                }
+                .lesson-cell {
+                    margin: 5px 0;
+                    padding: 5px;
+                    border-bottom: 1px solid #eee;
+                }
             </style>
         </head>
         <body>
@@ -1423,7 +1448,43 @@ function printContent(type = 'all') {
             </div>
     `;
 
+    // הדפסת תכנון
+    if (type === 'planning' || type === 'all') {
+        content += `
+            <h2>תכנון שיעורים</h2>
+            <table>
+                <thead>
+                    <tr>
+                        <th>נושא</th>
+                        <th>תת נושא</th>
+                        <th>מספר שיעורים</th>
+                        <th>הערות</th>
+                    </tr>
+                </thead>
+                <tbody>
+        `;
+
+        const topics = getTopicsData();
+        topics.forEach(topic => {
+            topic.subtopics.forEach((subtopic, index) => {
+                content += `
+                    <tr>
+                        <td>${index === 0 ? topic.title : ''}</td>
+                        <td>${subtopic.title}</td>
+                        <td>${subtopic.lessons}</td>
+                        <td>${subtopic.notes || ''}</td>
+                    </tr>
+                `;
+            });
+        });
+
+        content += '</tbody></table>';
+    }
+
+    // הדפסת לוז
     if (type === 'schedule' || type === 'all') {
+        if (type === 'all') content += '<div style="page-break-before: always;"></div>';
+        
         content += `
             <h2>לוח שיעורים</h2>
             <table>
@@ -1437,37 +1498,55 @@ function printContent(type = 'all') {
                 <tbody>
         `;
 
+        // איסוף השיעורים המתוכננים
+        const scheduledLessons = [];
         document.querySelectorAll('.main-table tbody tr').forEach(row => {
-            row.querySelectorAll('td').forEach((cell, index) => {
-                if (index < 2 || index > 7) return; // Skip date cells and total
-                if (!cell.classList.contains('learning-day')) return;
+            const firstDateCell = row.querySelector('.date-cell');
+            if (!firstDateCell) return;
 
+            row.querySelectorAll('td').forEach(async (cell, index) => {
+                if (index < 2 || index > 7) return; // דילוג על תאי תאריך וסה"כ
+                if (!cell.classList.contains('learning-day')) return;
+                
                 const dayDate = getDayDate(row, index - 2);
                 if (!dayDate) return;
 
-                const lessons = cell.querySelectorAll('.lesson-cell');
+                const hebrewDate = await getHebrewDate(dayDate);
+                const lessons = cell.querySelectorAll('.lesson-cell:not(.cancelled-lesson)');
+                
                 if (lessons.length && !cell.classList.contains('cancelled-day')) {
-                    content += `
-                        <tr>
-                            <td>${formatLocalDate(dayDate)}</td>
-                            <td>${weekDaysDisplay.days[index-2]}</td>
-                            <td>
-                                ${Array.from(lessons).map(lesson => {
-                                    if (!lesson.classList.contains('cancelled-lesson')) {
-                                        return `
-                                            <div class="lesson-cell">
-                                                <div class="lesson-topic">${lesson.querySelector('.lesson-topic')?.textContent || ''}</div>
-                                                <div class="lesson-subtopic">${lesson.querySelector('.lesson-subtopic')?.textContent || ''}</div>
-                                            </div>
-                                        `;
-                                    }
-                                    return '';
-                                }).join('')}
-                            </td>
-                        </tr>
-                    `;
+                    scheduledLessons.push({
+                        date: dayDate,
+                        hebrewDate: hebrewDate,
+                        dayIndex: index - 2,
+                        lessons: Array.from(lessons).map(lesson => ({
+                            topic: lesson.querySelector('.lesson-topic')?.textContent || '',
+                            subtopic: lesson.querySelector('.lesson-subtopic')?.textContent || ''
+                        }))
+                    });
                 }
             });
+        });
+
+        // מיון לפי תאריך
+        scheduledLessons.sort((a, b) => a.date - b.date);
+
+        // הוספת השיעורים לטבלה
+        scheduledLessons.forEach(daySchedule => {
+            content += `
+                <tr>
+                    <td>${daySchedule.hebrewDate ? daySchedule.hebrewDate.hebrew : ''} (${formatLocalDate(daySchedule.date)})</td>
+                    <td>${weekDaysDisplay.days[daySchedule.dayIndex]}</td>
+                    <td>
+                        ${daySchedule.lessons.map(lesson => `
+                            <div class="lesson-cell">
+                                <div class="lesson-topic">${lesson.topic}</div>
+                                <div class="lesson-subtopic">${lesson.subtopic}</div>
+                            </div>
+                        `).join('')}
+                    </td>
+                </tr>
+            `;
         });
 
         content += '</tbody></table>';
@@ -2949,7 +3028,7 @@ function exportToCSV(type = 'all') {
         rows.push(['=== תכנון שיעורים ===']);
         rows.push(['מקצוע', 'נושא', 'תת נושא', 'מספר שיעורים', 'הערות']);
 
-        const topics = getTopicsData(); // שימוש בפונקציה הקיימת לקבלת הנתונים
+        const topics = getTopicsData();
         topics.forEach(topic => {
             topic.subtopics.forEach(subtopic => {
                 rows.push([
@@ -2966,29 +3045,50 @@ function exportToCSV(type = 'all') {
     if (type === 'schedule' || type === 'all') {
         if (rows.length > 0) rows.push([]);
         rows.push(['=== לוז שיעורים ===']);
-        rows.push(['תאריך', 'יום', 'נושא', 'תת נושא', 'שיעור']);
+        rows.push(['תאריך עברי', 'תאריך לועזי', 'יום', 'נושא', 'תת נושא']);
 
-        document.querySelectorAll('.main-table tbody tr').forEach(row => {
-            const dateCell = row.querySelector('.date-cell');
-            if (!dateCell) return;
+        // איסוף השיעורים והתאריכים
+        let lessonsData = [];
+        document.querySelectorAll('.main-table tbody tr').forEach(async row => {
+            const firstDateCell = row.querySelector('.date-cell');
+            if (!firstDateCell) return;
 
-            const hebrewDate = dateCell.querySelector('.hebrew-date')?.textContent || '';
-            const gregDate = dateCell.querySelector('.gregorian-date')?.textContent || '';
-            const fullDate = `${hebrewDate} (${gregDate})`;
+            row.querySelectorAll('td').forEach(async (cell, index) => {
+                if (index < 2 || index > 7) return;
+                if (!cell.classList.contains('learning-day')) return;
 
-            const lessonCells = row.querySelectorAll('.learning-day .lesson-cell');
-            lessonCells.forEach(lesson => {
-                const dayCell = lesson.closest('td');
-                const dayIndex = Array.from(row.cells).indexOf(dayCell) - 2; // -2 because of date cells
+                const dayDate = getDayDate(row, index - 2);
+                if (!dayDate) return;
 
-                rows.push([
-                    fullDate,
-                    weekDaysDisplay.days[dayIndex],
-                    lesson.querySelector('.lesson-topic')?.textContent || '',
-                    lesson.querySelector('.lesson-subtopic')?.textContent || '',
-                    dayCell.dataset.lessons || ''
-                ]);
+                const hebrewDate = await getHebrewDate(dayDate);
+                const lessons = cell.querySelectorAll('.lesson-cell:not(.cancelled-lesson)');
+
+                if (lessons.length && !cell.classList.contains('cancelled-day')) {
+                    lessons.forEach(lesson => {
+                        lessonsData.push({
+                            hebrewDate: hebrewDate ? hebrewDate.hebrew : '',
+                            gregDate: formatLocalDate(dayDate),
+                            day: weekDaysDisplay.days[index - 2],
+                            topic: lesson.querySelector('.lesson-topic')?.textContent || '',
+                            subtopic: lesson.querySelector('.lesson-subtopic')?.textContent || ''
+                        });
+                    });
+                }
             });
+        });
+
+        // מיון לפי תאריך
+        lessonsData.sort((a, b) => new Date(a.gregDate) - new Date(b.gregDate));
+
+        // הוספת השורות לקובץ
+        lessonsData.forEach(lesson => {
+            rows.push([
+                lesson.hebrewDate,
+                lesson.gregDate,
+                lesson.day,
+                lesson.topic,
+                lesson.subtopic
+            ]);
         });
     }
 
@@ -3014,7 +3114,8 @@ function exportToCSV(type = 'all') {
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
-}// Add file input reset function
+}
+// Add file input reset function
 function resetFileInput() {
     const fileInput = document.getElementById('csvFileInput');
     fileInput.value = ''; // Reset the file input
