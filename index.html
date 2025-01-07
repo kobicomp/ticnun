@@ -3253,6 +3253,11 @@ function resetFileInput() {
     fileInput.value = ''; // Reset the file input
 }
 
+function resetFileInput() {
+    const fileInput = document.getElementById('csvFileInput');
+    if (fileInput) fileInput.value = '';
+}
+
 async function importFromCSV(file) {
     if (!file) {
         showError('נא לבחור קובץ');
@@ -3261,52 +3266,75 @@ async function importFromCSV(file) {
     }
 
     try {
+        console.log('Starting import of file:', file.name);
         const text = await file.text();
+        console.log('File content preview:', text.substring(0, 200));
+
+        // פיצול לשורות ופיענוח
         const rows = text.split('\n').map(row => {
             const cells = row.split(',').map(cell => cell.trim().replace(/^"|"$/g, ''));
+            console.log('Parsed row:', cells);
             return cells;
-        });
+        }).filter(row => row.length > 0); // מסנן שורות ריקות
 
         // הסרת שורות כותרת
-        while (rows.length > 0 && (rows[0][0].includes('===') || rows[0][0].toLowerCase().includes('subject'))) {
+        while (rows.length > 0 && (
+            rows[0][0].includes('===') || 
+            rows[0][0].toLowerCase().includes('subject') ||
+            rows[0][0].toLowerCase().includes('מקצוע')
+        )) {
+            console.log('Removing header row:', rows[0]);
             rows.shift();
         }
 
         const importType = await new Promise(resolve => {
             if (confirm('האם לייבא למקצוע חדש? לחץ "אישור" לחדש או "ביטול" למקצוע קיים')) {
                 const name = prompt('הכנס שם למקצוע החדש:');
-                if (!name || subjects.has(name)) {
-                    showError(!name ? 'שם לא הוזן' : 'מקצוע כבר קיים');
+                if (!name) {
+                    console.log('No name provided for new subject');
+                    resolve(null);
+                    return;
+                }
+                if (subjects.has(name)) {
+                    console.log('Subject already exists:', name);
+                    showError('מקצוע זה כבר קיים');
                     resolve(null);
                     return;
                 }
                 resolve({ type: 'new', name });
             } else {
                 if (subjects.size === 0) {
+                    console.log('No existing subjects');
                     showError('אין מקצועות קיימים');
                     resolve(null);
                     return;
                 }
 
                 const subjectsList = Array.from(subjects.keys());
-                const selectedIndex = prompt(
-                    'בחר מקצוע:\n\n' + 
-                    subjectsList.map((subject, i) => `${i + 1}. ${subject}`).join('\n')
-                );
+                let selectHtml = 'בחר מקצוע:\n\n';
+                subjectsList.forEach((subject, index) => {
+                    selectHtml += `${index + 1}. ${subject}\n`;
+                });
+
+                const selectedIndex = prompt(selectHtml);
+                console.log('Selected index:', selectedIndex);
 
                 if (!selectedIndex) {
+                    console.log('No subject selected');
                     resolve(null);
                     return;
                 }
 
                 const selectedSubject = subjectsList[parseInt(selectedIndex) - 1];
                 if (!selectedSubject) {
+                    console.log('Invalid subject selection');
                     showError('בחירה לא תקינה');
                     resolve(null);
                     return;
                 }
 
-                if (!confirm(`האם אתה בטוח שברצונך לייבא למקצוע "${selectedSubject}"?`)) {
+                if (!confirm(`האם אתה בטוח שברצונך לייבא למקצוע "${selectedSubject}"? פעולה זו תחליף את כל הנתונים הקיימים.`)) {
+                    console.log('Import cancelled by user');
                     resolve(null);
                     return;
                 }
@@ -3315,36 +3343,61 @@ async function importFromCSV(file) {
             }
         });
 
+        console.log('Import type:', importType);
+
         if (!importType) {
             resetFileInput();
             return;
         }
 
-        let targetSubject = {
-            name: importType.name,
-            lessonsPerDay: importType.type === 'new' ? [0,0,0,0,0,0] : subjects.get(importType.name).lessonsPerDay,
-            topics: [],
-            startDate: document.getElementById('startDate').value,
-            endDate: document.getElementById('endDate').value,
-            lastUpdate: new Date().toISOString(),
-            lessonChanges: {
-                cancelledLessons: [],
-                cancelledDays: [],
-                added: []
-            }
-        };
+        // יצירת או עדכון המקצוע
+        let targetSubject;
+        if (importType.type === 'new') {
+            targetSubject = {
+                name: importType.name,
+                lessonsPerDay: [0,0,0,0,0,0],
+                topics: [],
+                startDate: document.getElementById('startDate').value,
+                endDate: document.getElementById('endDate').value,
+                lastUpdate: new Date().toISOString(),
+                lessonChanges: {
+                    cancelledLessons: [],
+                    cancelledDays: [],
+                    added: []
+                }
+            };
+        } else {
+            const existingSubject = subjects.get(importType.name);
+            targetSubject = {
+                ...existingSubject,
+                topics: [],
+                lastUpdate: new Date().toISOString()
+            };
+        }
 
+        console.log('Target subject initialized:', targetSubject);
+
+        // עיבוד הנתונים מהקובץ
         let currentTopic = null;
         let topicData = null;
 
         for (const row of rows) {
-            if (row.length < 4) continue;
+            if (row.length < 4) {
+                console.log('Skipping short row:', row);
+                continue;
+            }
 
             const [subject, topicTitle, subtopicTitle, lessonsStr, notes] = row;
-            if (!topicTitle || !subtopicTitle) continue;
+            console.log('Processing row:', { subject, topicTitle, subtopicTitle, lessonsStr, notes });
+
+            if (!topicTitle || !subtopicTitle) {
+                console.log('Skipping row with missing title:', row);
+                continue;
+            }
 
             if (!currentTopic || currentTopic !== topicTitle) {
                 if (topicData) {
+                    console.log('Adding completed topic:', topicData);
                     targetSubject.topics.push(topicData);
                 }
                 currentTopic = topicTitle;
@@ -3353,25 +3406,37 @@ async function importFromCSV(file) {
                     lessons: 0,
                     subtopics: []
                 };
+                console.log('Created new topic:', topicData);
             }
 
-            const lessons = parseInt(lessonsStr) || 1;
-            topicData.lessons += lessons;
+            const subtopicLessons = parseInt(lessonsStr) || 1;
+            topicData.lessons += subtopicLessons;
             topicData.subtopics.push({
                 title: subtopicTitle,
-                lessons: lessons,
+                lessons: subtopicLessons,
                 notes: notes || ''
             });
+            console.log('Added subtopic:', { title: subtopicTitle, lessons: subtopicLessons, notes });
         }
 
+        // הוספת הנושא האחרון
         if (topicData) {
+            console.log('Adding final topic:', topicData);
             targetSubject.topics.push(topicData);
         }
 
-        subjects.set(targetSubject.name, targetSubject);
-        saveSubjectsToStorage();
-        updateSubjectSelect();
+        console.log('Final subject data:', targetSubject);
 
+        // עדכון ה-Map
+        subjects.set(targetSubject.name, targetSubject);
+        console.log('Updated subjects map');
+
+        // שמירה למאגר
+        saveSubjectsToStorage();
+        console.log('Saved to storage');
+
+        // עדכון הממשק
+        updateSubjectSelect();
         document.getElementById('subjectSelect').value = targetSubject.name;
         currentSubject = targetSubject;
         await loadSubjectData();
