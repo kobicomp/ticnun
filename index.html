@@ -1959,13 +1959,8 @@ function updateLessonDisplay(cell) {
 
 // פונקציה חדשה להוספת שיעור
 function addLesson(cell) {
-    if (!currentSubject) {
-        showError('יש לבחור מקצוע תחילה');
-        return;
-    }
-
-    if (cell.classList.contains('non-learning-day')) {
-        showError('לא ניתן להוסיף שיעור ביום ללא לימודים');
+    if (!currentSubject || cell.classList.contains('non-learning-day')) {
+        showError('לא ניתן להוסיף שיעור');
         return;
     }
 
@@ -1974,122 +1969,65 @@ function addLesson(cell) {
     const date = dateCell?.textContent;
     const dayIndex = Array.from(row.children).indexOf(cell) - 2;
 
-    if (confirm('האם להוסיף שיעור ליום זה?')) {
-        initLessonChanges();
+    if (!confirm('האם להוסיף שיעור ליום זה?')) return;
 
-        // ביטול ביטול היום אם היה מבוטל
-        const cancelledDayIndex = currentSubject.lessonChanges.cancelledDays.findIndex(d => 
-            d.date === date && d.dayIndex === dayIndex);
-        
-        if (cancelledDayIndex !== -1) {
-            currentSubject.lessonChanges.cancelledDays.splice(cancelledDayIndex, 1);
-            cell.classList.remove('cancelled-day');
-        }
+    initLessonChanges();
 
-        // איסוף שיעורים עתידיים
-        const futureLessons = [];
-        let foundCurrent = false;
-        
-        document.querySelectorAll('.main-table tbody tr').forEach(tableRow => {
-            tableRow.querySelectorAll('td').forEach((tableCell, index) => {
-                if (index < 2 || index > 7) return;
-                if (!tableCell.classList.contains('learning-day') && 
-                    !tableCell.classList.contains('cancelled-day')) return;
-
-                const cellDate = tableRow.querySelector('.gregorian-date')?.textContent;
-                const cellDayIndex = index - 2;
-                
-                if (foundCurrent || (cellDate === date && cellDayIndex === dayIndex)) {
-                    foundCurrent = true;
-                    const lessons = tableCell.querySelectorAll('.lesson-cell');
-                    
-                    lessons.forEach((lesson, lessonIndex) => {
-                        const isLessonCancelled = currentSubject.lessonChanges.cancelledLessons.some(l =>
-                            l.date === cellDate && 
-                            l.dayIndex === cellDayIndex && 
-                            l.lessonIndex === lessonIndex);
-                            
-                        if (!isLessonCancelled) {
-                            futureLessons.push({
-                                topic: lesson.querySelector('.lesson-topic')?.textContent || '',
-                                subtopic: lesson.querySelector('.lesson-subtopic')?.textContent || ''
-                            });
-                        }
-                    });
-                }
-            });
-        });
-
-        if (futureLessons.length > 0) {
-            futureLessons.pop();
-
-            let currentRow = row;
-            let currentCell = cell;
-            let lessonIndex = 0;
-
-            while (lessonIndex < futureLessons.length) {
-                if (!currentCell || 
-                    (!currentCell.classList.contains('learning-day') && 
-                    !currentCell.classList.contains('cancelled-day'))) {
-                    currentRow = currentRow.nextElementSibling;
-                    if (!currentRow) break;
-                    
-                    for (const nextCell of Array.from(currentRow.children).slice(2, 8)) {
-                        if (nextCell.classList.contains('learning-day') || 
-                            nextCell.classList.contains('cancelled-day')) {
-                            currentCell = nextCell;
-                            break;
-                        }
-                    }
-                    continue;
-                }
-
-                const lessonsContainer = currentCell.querySelector('.lessons-container') || 
-                    (() => {
-                        const container = document.createElement('div');
-                        container.className = 'lessons-container';
-                        currentCell.appendChild(container);
-                        return container;
-                    })();
-
-                const lesson = futureLessons[lessonIndex];
-                const lessonElement = document.createElement('div');
-                lessonElement.className = 'lesson-cell';
-                lessonElement.innerHTML = `
-                    <button class="cancel-lesson-btn" onclick="cancelLesson(this.closest('td'), this.closest('.lesson-cell'))">⊖</button>
-                    <div class="lesson-topic">${lesson.topic}</div>
-                    <div class="lesson-subtopic">${lesson.subtopic}</div>
-                `;
-                lessonsContainer.appendChild(lessonElement);
-                lessonIndex++;
-
-                currentCell = currentCell.nextElementSibling;
-            }
-        }
-
-        // הוספת השיעור החדש
-        if (!currentSubject.lessonChanges.added.some(a =>
-            a.date === date && a.dayIndex === dayIndex
-        )) {
-            currentSubject.lessonChanges.added.push({ date, dayIndex });
-        }
-        
-        const currentLessons = parseInt(cell.dataset.lessons) || 0;
-        cell.dataset.lessons = (currentLessons + 1).toString();
-        cell.dataset.original_lessons = cell.dataset.lessons;
-        
-        cell.classList.remove('potential-learning-day', 'cancelled-day');
-        cell.classList.add('learning-day');
-        
-        if (!cell.querySelector('.lessons-container')) {
-            const container = document.createElement('div');
-            container.className = 'lessons-container';
-            cell.appendChild(container);
-        }
-
-        saveSubjectsToStorage();
-        validateAndPlan();
+    // ביטול ביטול היום אם היה מבוטל
+    const cancelledDayIndex = currentSubject.lessonChanges.cancelledDays.findIndex(d => 
+        d.date === date && d.dayIndex === dayIndex);
+    
+    if (cancelledDayIndex !== -1) {
+        currentSubject.lessonChanges.cancelledDays.splice(cancelledDayIndex, 1);
+        cell.classList.remove('cancelled-day');
     }
+
+    // איסוף שיעורים עתידיים רק מימי לימוד רגילים
+    const futureLessons = [];
+    let foundCurrent = false;
+    
+    document.querySelectorAll('.main-table tbody tr').forEach(tableRow => {
+        tableRow.querySelectorAll('td').forEach((tableCell, index) => {
+            if (index < 2 || index > 7 || !tableCell.classList.contains('learning-day')) return;
+
+            const cellDate = tableRow.querySelector('.gregorian-date')?.textContent;
+            const cellDayIndex = index - 2;
+            
+            if (foundCurrent || (cellDate === date && cellDayIndex === dayIndex)) {
+                foundCurrent = true;
+                const lessons = tableCell.querySelectorAll('.lesson-cell:not(.cancelled-lesson)');
+                lessons.forEach(lesson => {
+                    futureLessons.push({
+                        topic: lesson.querySelector('.lesson-topic')?.textContent || '',
+                        subtopic: lesson.querySelector('.lesson-subtopic')?.textContent || ''
+                    });
+                });
+            }
+        });
+    });
+
+    // הוספת השיעור החדש
+    if (!currentSubject.lessonChanges.added.some(a =>
+        a.date === date && a.dayIndex === dayIndex
+    )) {
+        currentSubject.lessonChanges.added.push({ date, dayIndex });
+    }
+    
+    const currentLessons = parseInt(cell.dataset.lessons) || 0;
+    cell.dataset.lessons = (currentLessons + 1).toString();
+    cell.dataset.original_lessons = cell.dataset.lessons;
+    
+    cell.classList.remove('potential-learning-day', 'cancelled-day');
+    cell.classList.add('learning-day');
+    
+    if (!cell.querySelector('.lessons-container')) {
+        const container = document.createElement('div');
+        container.className = 'lessons-container';
+        cell.appendChild(container);
+    }
+
+    saveSubjectsToStorage();
+    validateAndPlan();
 }
 // עדכון generateTable - הוספת כפתורי פעולה
 // בתוך הלולאה שיוצרת את התאים ב-generateTable, עדכן את יצירת התא כך:
