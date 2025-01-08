@@ -1164,49 +1164,46 @@ td.non-learning-day {
        <!-- בחירת מקצוע -->
 <div class="subjects-section">
   <div class="subject-controls">
-    <select id="subjectSelect" class="subject-select" onchange="handleSubjectChange()">
-        <option value="">בחר מקצוע</option>
-    </select>
-
-    <button onclick="toggleAddSubjectForm()">הוסף מקצוע</button>
-    <button onclick="deleteCurrentSubject()" class="delete-btn">מחק מקצוע</button>
-
-        <!-- העברת כפתורי הייצוא וההדפסה -->
-        <div class="dropdown">
-        <button onclick="toggleExportMenu()">ייצוא ⌄</button>
-        <div id="exportMenu" class="dropdown-content">
-            <a onclick="handleExportClick('planning')">ייצוא תכנון</a>
-            <a onclick="handleExportClick('schedule')">ייצוא לוז</a>
-            <a onclick="handleExportClick('all')">ייצוא הכל</a>
-        </div>
-    </div>
-    <div class="dropdown">
-        <button onclick="toggleWhatsAppMenu()">שלח בווטסאפ ⌄</button>
-        <div id="whatsappMenu" class="dropdown-content">
-            <a onclick="sendToWhatsApp('planning')">שלח תכנון</a>
-            <a onclick="sendToWhatsApp('schedule')">שלח לוז</a>
-            <a onclick="sendToWhatsApp('all')">שלח הכל</a>
-        </div>
-    </div>
-    <div class="dropdown">
-    <button onclick="toggleShareMenu()">שתף ⌄</button>
-    <div id="shareMenu" class="dropdown-content">
-        <a onclick="shareFile('planning')">שתף תכנון</a>
-        <a onclick="shareFile('schedule')">שתף לוז</a>
-        <a onclick="shareFile('all')">שתף הכל</a>
-    </div>
-</div>
-        <div class="dropdown">
-            <button onclick="togglePrintMenu()">הדפסה ⌄</button>
-            <div id="printMenu" class="dropdown-content">
-                <a onclick="printContent('planning')">הדפס תכנון</a>
-                <a onclick="printContent('schedule')">הדפס לוז</a>
-                <a onclick="printContent('all')">הדפס הכל</a>
-            </div>
-        </div>
-        <input type="file" id="csvFileInput" accept=".csv" style="display: none" onchange="importFromCSV(this.files[0])">
-        <button onclick="document.getElementById('csvFileInput').click()">ייבא תכנון</button>
-    </div>
+      <select id="subjectSelect" class="subject-select" onchange="handleSubjectChange()">
+          <option value="">בחר מקצוע</option>
+      </select>
+  
+      <button onclick="toggleAddSubjectForm()">הוסף מקצוע</button>
+      <button onclick="deleteCurrentSubject()" class="delete-btn">מחק מקצוע</button>
+  
+      <!-- תפריט ייצוא -->
+      <div class="dropdown">
+          <button onclick="toggleExportMenu()">ייצוא ⌄</button>
+          <div id="exportMenu" class="dropdown-content">
+              <a onclick="handleExportClick('planning')">ייצוא תכנון</a>
+              <a onclick="handleExportClick('schedule')">ייצוא לוז</a>
+              <a onclick="handleExportClick('all')">ייצוא הכל</a>
+          </div>
+      </div>
+  
+      <!-- הוספת תפריט שיתוף חדש -->
+      <div class="dropdown">
+          <button onclick="toggleShareMenu()">שתף ⌄</button>
+          <div id="shareMenu" class="dropdown-content">
+              <a onclick="shareFile('planning')">שתף תכנון</a>
+              <a onclick="shareFile('schedule')">שתף לוז</a>
+              <a onclick="shareFile('all')">שתף הכל</a>
+          </div>
+      </div>
+  
+      <!-- שאר הכפתורים -->
+      <div class="dropdown">
+          <button onclick="togglePrintMenu()">הדפסה ⌄</button>
+          <div id="printMenu" class="dropdown-content">
+              <a onclick="printContent('planning')">הדפס תכנון</a>
+              <a onclick="printContent('schedule')">הדפס לוז</a>
+              <a onclick="printContent('all')">הדפס הכל</a>
+          </div>
+      </div>
+  
+      <input type="file" id="csvFileInput" accept=".csv" style="display: none" onchange="importFromCSV(this.files[0])">
+      <button onclick="document.getElementById('csvFileInput').click()">ייבא תכנון</button>
+  </div>
     <div id="addSubjectForm">
         <input type="text" id="newSubjectInput" placeholder="שם המקצוע">
         <button onclick="addNewSubject()">שמור מקצוע</button>
@@ -3469,6 +3466,7 @@ async function shareFile(type = 'all') {
             link.click();
             document.body.removeChild(link);
             URL.revokeObjectURL(link.href);
+            showError('הדפדפן לא תומך בשיתוף ישיר. הקובץ הורד למחשב.');
         }
     } catch (error) {
         console.error('Error sharing:', error);
@@ -3478,12 +3476,12 @@ async function shareFile(type = 'all') {
 function toggleShareMenu() {
     const menu = document.getElementById('shareMenu');
     // סגירת תפריטים אחרים
-    document.getElementById('exportMenu')?.style.display = 'none';
-    document.getElementById('printMenu')?.style.display = 'none';
-    document.getElementById('whatsappMenu')?.style.display = 'none';
+    document.getElementById('exportMenu').style.display = 'none';
+    document.getElementById('printMenu').style.display = 'none';
     // הצגת/הסתרת תפריט שיתוף
     menu.style.display = menu.style.display === 'block' ? 'none' : 'block';
 }
+
 function resetFileInput() {
     const fileInput = document.getElementById('csvFileInput');
     fileInput.value = ''; // Reset the file input
@@ -3612,7 +3610,11 @@ window.addEventListener('beforeunload', () => {
         saveSubjectsToStorage();
     }
 });
-
+document.addEventListener('click', function(event) {
+    if (!event.target.matches('.dropdown button')) {
+        document.getElementById('shareMenu').style.display = 'none';
+    }
+});
 </script>
 </body>
 </html>
