@@ -1188,6 +1188,14 @@ td.non-learning-day {
             <a onclick="sendToWhatsApp('all')">שלח הכל</a>
         </div>
     </div>
+<div class="dropdown">
+    <button onclick="toggleShareMenu()">שתף ⌄</button>
+    <div id="shareMenu" class="dropdown-content">
+        <a onclick="shareFile('planning')">שתף תכנון</a>
+        <a onclick="shareFile('schedule')">שתף לוז</a>
+        <a onclick="shareFile('all')">שתף הכל</a>
+    </div>
+</div>
         <div class="dropdown">
             <button onclick="togglePrintMenu()">הדפסה ⌄</button>
             <div id="printMenu" class="dropdown-content">
