@@ -1188,7 +1188,7 @@ td.non-learning-day {
             <a onclick="sendToWhatsApp('all')">שלח הכל</a>
         </div>
     </div>
-<div class="dropdown">
+    <div class="dropdown">
     <button onclick="toggleShareMenu()">שתף ⌄</button>
     <div id="shareMenu" class="dropdown-content">
         <a onclick="shareFile('planning')">שתף תכנון</a>
@@ -3443,7 +3443,47 @@ function resetFileInput() {
 
 // Update the file input HTML
 // <input type="file" id="csvFileInput" accept=".csv" style="display: none" onchange="importFromCSV(this.files[0])">
+async function shareFile(type = 'all') {
+    if (!currentSubject) {
+        showError('יש לבחור מקצוע תחילה');
+        return;
+    }
 
+    try {
+        const data = generateExportData(type);
+        const blob = new Blob(['\ufeff' + data], { type: 'text/csv;charset=utf-8;' });
+        const file = new File([blob], `${currentSubject.name}_${type}.csv`, { type: 'text/csv' });
+
+        if (navigator.share && navigator.canShare({ files: [file] })) {
+            await navigator.share({
+                files: [file],
+                title: `תכנון ${currentSubject.name}`,
+                text: 'קובץ תכנון לימודים'
+            });
+        } else {
+            // נפעיל את הייצוא הרגיל אם השיתוף לא נתמך
+            const link = document.createElement('a');
+            link.href = URL.createObjectURL(blob);
+            link.download = `${currentSubject.name}_${type}.csv`;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            URL.revokeObjectURL(link.href);
+        }
+    } catch (error) {
+        console.error('Error sharing:', error);
+        showError('שגיאה בשיתוף הקובץ');
+    }
+}
+function toggleShareMenu() {
+    const menu = document.getElementById('shareMenu');
+    // סגירת תפריטים אחרים
+    document.getElementById('exportMenu')?.style.display = 'none';
+    document.getElementById('printMenu')?.style.display = 'none';
+    document.getElementById('whatsappMenu')?.style.display = 'none';
+    // הצגת/הסתרת תפריט שיתוף
+    menu.style.display = menu.style.display === 'block' ? 'none' : 'block';
+}
 function resetFileInput() {
     const fileInput = document.getElementById('csvFileInput');
     fileInput.value = ''; // Reset the file input
