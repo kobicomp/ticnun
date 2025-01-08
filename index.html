@@ -3655,9 +3655,6 @@ async function sendToWhatsApp(type = 'all') {
         const blob = new Blob(['\ufeff' + data], { type: 'text/csv;charset=utf-8;' });
         const file = new File([blob], `${currentSubject.name}_${type}.csv`, { type: 'text/csv' });
 
-        // המרת המספר לפורמט בינלאומי
-        phoneNumber = '972' + phoneNumber.substring(1);
-
         // יצירת הודעה
         let message = `קובץ תכנון למקצוע ${currentSubject.name}`;
         if (type === 'planning') {
@@ -3675,35 +3672,47 @@ async function sendToWhatsApp(type = 'all') {
             message += ` לתקופה ${formattedStartDate} - ${formattedEndDate}`;
         }
 
-        if (navigator.share && navigator.canShare({ files: [file] })) {
-            // אם אפשר לשתף קבצים ישירות
-            await navigator.share({
+        if (navigator.canShare && navigator.canShare({ files: [file] })) {
+            // שימוש ב Web Share API כשאפשר
+            const shareData = {
                 files: [file],
+                title: message,
                 text: message
-            });
-            // פתיחת ווטסאפ עם המספר הספציפי
-            window.open(`https://wa.me/${phoneNumber}`, '_blank');
+            };
+
+            try {
+                await navigator.share(shareData);
+            } catch (err) {
+                // אם השיתוף נכשל, נחזור לדרך הרגילה
+                fallbackShare();
+            }
         } else {
-            // אם אי אפשר לשתף קבצים, נפתח את ווטסאפ ונוריד את הקובץ
-            const link = document.createElement('a');
-            link.href = URL.createObjectURL(blob);
-            link.download = `${currentSubject.name}_${type}.csv`;
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
-            URL.revokeObjectURL(link.href);
-
-            // פתיחת ווטסאפ עם הודעה
-            window.open(`https://wa.me/${phoneNumber}?text=${encodeURIComponent(message)}`, '_blank');
-            showError('הקובץ הורד. אנא שלח אותו בצ׳אט הווטסאפ שנפתח');
+            fallbackShare();
         }
+        function fallbackShare() {
+          // המרת המספר לפורמט בינלאומי
+          const whatsappNumber = '972' + phoneNumber.substring(1);
+          
+          // הורדת הקובץ
+          const link = document.createElement('a');
+          link.href = URL.createObjectURL(blob);
+          link.download = `${currentSubject.name}_${type}.csv`;
+          document.body.appendChild(link);
+          link.click();
+          document.body.removeChild(link);
+          URL.revokeObjectURL(link.href);
 
-    } catch (error) {
-        console.error('Error sending to WhatsApp:', error);
-        showError('שגיאה בשליחה לווטסאפ');
-    }
+          // פתיחת ווטסאפ
+          window.open(`https://wa.me/${whatsappNumber}?text=${encodeURIComponent(message)}`, '_blank');
+          
+          showError('הקובץ הורד. אנא שלח אותו בצ׳אט הווטסאפ שנפתח');
+      }
+
+  } catch (error) {
+      console.error('Error sharing:', error);
+      showError('שגיאה בשיתוף הקובץ');
+  }
 }
-
 function updateTotalLessons() {
     const totalPlanned = Array.from(document.querySelectorAll('.topic-container'))
         .reduce((sum, topic) => sum + (parseInt(topic.querySelector('.topic-lessons').value) || 0), 0);
