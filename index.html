@@ -3473,6 +3473,7 @@ async function shareFile(type = 'all') {
         showError('שגיאה בשיתוף הקובץ');
     }
 }
+
 function toggleShareMenu() {
     const menu = document.getElementById('shareMenu');
     // סגירת תפריטים אחרים
@@ -3481,12 +3482,67 @@ function toggleShareMenu() {
     // הצגת/הסתרת תפריט שיתוף
     menu.style.display = menu.style.display === 'block' ? 'none' : 'block';
 }
-
 function resetFileInput() {
     const fileInput = document.getElementById('csvFileInput');
     fileInput.value = ''; // Reset the file input
 }
+function generateExportData(type = 'all') {
+    if (!currentSubject) {
+        showError('יש לבחור מקצוע תחילה');
+        return;
+    }
 
+    let rows = [];
+
+    if (type === 'planning' || type === 'all') {
+        rows.push(['=== תכנון שיעורים ===']);
+        rows.push(['מקצוע', 'נושא', 'תת נושא', 'מספר שיעורים', 'הערות']);
+
+        const topics = getTopicsData();
+        topics.forEach(topic => {
+            topic.subtopics.forEach(subtopic => {
+                rows.push([
+                    currentSubject.name,
+                    topic.title,
+                    subtopic.title,
+                    subtopic.lessons,
+                    subtopic.notes || ''
+                ]);
+            });
+        });
+    }
+
+    if (type === 'schedule' || type === 'all') {
+        if (rows.length > 0) rows.push([]);
+        rows.push(['=== לוז שיעורים ===']);
+        rows.push(['תאריך עברי', 'תאריך לועזי', 'יום', 'נושא', 'תת נושא']);
+
+        document.querySelectorAll('.main-table tbody tr').forEach(row => {
+            row.querySelectorAll('td').forEach((cell, index) => {
+                if (index < 2 || index > 7) return;
+                if (!cell.classList.contains('learning-day')) return;
+
+                const dateCell = row.querySelector('.gregorian-date')?.textContent;
+                const dayIndex = index - 2;
+                const dayName = weekDaysDisplay.days[dayIndex];
+
+                cell.querySelectorAll('.lesson-cell:not(.cancelled-lesson)').forEach(lesson => {
+                    rows.push([
+                        '', // תאריך עברי
+                        dateCell,
+                        dayName,
+                        lesson.querySelector('.lesson-topic')?.textContent || '',
+                        lesson.querySelector('.lesson-subtopic')?.textContent || ''
+                    ]);
+                });
+            });
+        });
+    }
+
+    return rows.map(row => 
+        row.map(cell => `"${(cell || '').toString().replace(/"/g, '""')}"`).join(',')
+    ).join('\n');
+}
 function askForNewSubjectName() {
     return new Promise(resolve => {
         const name = prompt('הכנס שם למקצוע החדש:');
