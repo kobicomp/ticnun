@@ -3650,6 +3650,7 @@ async function sendToWhatsApp(type = 'all') {
     }
 
     try {
+        // יצירת הקובץ
         const data = generateExportData(type);
         const blob = new Blob(['\ufeff' + data], { type: 'text/csv;charset=utf-8;' });
         const file = new File([blob], `${currentSubject.name}_${type}.csv`, { type: 'text/csv' });
@@ -3675,21 +3676,15 @@ async function sendToWhatsApp(type = 'all') {
         }
 
         if (navigator.share && navigator.canShare({ files: [file] })) {
-            // אם נתמך שיתוף קבצים ישיר
-            const shareData = {
+            // אם אפשר לשתף קבצים ישירות
+            await navigator.share({
                 files: [file],
-                title: message,
                 text: message
-            };
-
-            // פתיחת ווטסאפ עם המספר הספציפי והקובץ
-            await navigator.share(shareData);
-            window.open(`https://wa.me/${phoneNumber}?text=${encodeURIComponent(message)}`, '_blank');
+            });
+            // פתיחת ווטסאפ עם המספר הספציפי
+            window.open(`https://wa.me/${phoneNumber}`, '_blank');
         } else {
-            // אם לא נתמך שיתוף קבצים, רק פותחים את ווטסאפ עם הודעה
-            window.open(`https://wa.me/${phoneNumber}?text=${encodeURIComponent(message)}`, '_blank');
-            
-            // הורדת הקובץ למחשב
+            // אם אי אפשר לשתף קבצים, נפתח את ווטסאפ ונוריד את הקובץ
             const link = document.createElement('a');
             link.href = URL.createObjectURL(blob);
             link.download = `${currentSubject.name}_${type}.csv`;
@@ -3697,8 +3692,10 @@ async function sendToWhatsApp(type = 'all') {
             link.click();
             document.body.removeChild(link);
             URL.revokeObjectURL(link.href);
-            
-            showError('הקובץ הורד למחשב. אנא שלח אותו בצ׳אט הווטסאפ שנפתח.');
+
+            // פתיחת ווטסאפ עם הודעה
+            window.open(`https://wa.me/${phoneNumber}?text=${encodeURIComponent(message)}`, '_blank');
+            showError('הקובץ הורד. אנא שלח אותו בצ׳אט הווטסאפ שנפתח');
         }
 
     } catch (error) {
@@ -3706,6 +3703,7 @@ async function sendToWhatsApp(type = 'all') {
         showError('שגיאה בשליחה לווטסאפ');
     }
 }
+
 function updateTotalLessons() {
     const totalPlanned = Array.from(document.querySelectorAll('.topic-container'))
         .reduce((sum, topic) => sum + (parseInt(topic.querySelector('.topic-lessons').value) || 0), 0);
@@ -3753,6 +3751,11 @@ window.addEventListener('beforeunload', () => {
 document.addEventListener('click', function(event) {
     if (!event.target.matches('.dropdown button')) {
         document.getElementById('shareMenu').style.display = 'none';
+    }
+});
+document.addEventListener('click', function(event) {
+    if (!event.target.matches('.dropdown button')) {
+        document.getElementById('whatsappMenu').style.display = 'none';
     }
 });
 </script>
