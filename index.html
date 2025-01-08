@@ -2436,14 +2436,23 @@ async function loadTemplate(templateFile) {
 }
 function toggleTemplatesMenu() {
     const menu = document.getElementById('templatesMenu');
+    const isHidden = menu.style.display !== 'block';
+    
     // סגירת תפריטים אחרים
     document.getElementById('exportMenu').style.display = 'none';
     document.getElementById('printMenu').style.display = 'none';
     document.getElementById('shareMenu').style.display = 'none';
     document.getElementById('whatsappMenu').style.display = 'none';
-    // הצגת/הסתרת תפריט תבניות
-    menu.style.display = menu.style.display === 'block' ? 'none' : 'block';
+    
+    // אם התפריט היה מוסתר, נטען את הרשימה לפני הצגתו
+    if (isHidden) {
+        loadTemplatesList();
+    }
+    
+    // הצגת/הסתרת התפריט
+    menu.style.display = isHidden ? 'block' : 'none';
 }
+
 function getTotalSubtopicLessons(topicContainer) {
     let total = 0;
     topicContainer.querySelectorAll('.subtopic-lessons').forEach(input => {
@@ -3386,7 +3395,29 @@ function resetFileInput() {
     const fileInput = document.getElementById('csvFileInput');
     if (fileInput) fileInput.value = '';
 }
+async function loadTemplatesList() {
+    try {
+        const files = await window.fs.readdir('templates');
+        const menu = document.getElementById('templatesMenu');
+        menu.innerHTML = ''; // ניקוי התפריט
 
+        // סינון רק קבצי CSV
+        const csvFiles = files.filter(file => file.endsWith('.csv'));
+
+        // הוספת קישור לכל קובץ
+        csvFiles.forEach(file => {
+            const a = document.createElement('a');
+            // מציג את שם הקובץ בלי סיומת CSV
+            a.textContent = file.replace('.csv', '');
+            a.onclick = () => loadTemplate(file);
+            menu.appendChild(a);
+        });
+
+    } catch (error) {
+        console.error('Error loading templates list:', error);
+        showError('שגיאה בטעינת רשימת התבניות');
+    }
+}
 // Update the file input HTML
 // <input type="file" id="csvFileInput" accept=".csv" style="display: none" onchange="importFromCSV(this.files[0])">
 async function shareFile(type = 'all') {
