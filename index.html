@@ -1172,13 +1172,11 @@ td.non-learning-day {
       <button onclick="deleteCurrentSubject()" class="delete-btn">מחק מקצוע</button>
       <!-- להוסיף בתוך div.subject-controls -->
       <div class="dropdown">
-          <button onclick="toggleTemplatesMenu()">תבניות מוכנות ⌄</button>
-          <div id="templatesMenu" class="dropdown-content">
-              <a onclick="loadTemplate('torah_grade7.csv')">תורה - כיתה ז</a>
-              <a onclick="loadTemplate('torah_grade8.csv')">תורה - כיתה ח</a>
-              <a onclick="loadTemplate('torah_grade9.csv')">תורה - כיתה ט</a>
-          </div>
-      </div>
+    <button onclick="toggleTemplatesMenu()">תבניות מוכנות ⌄</button>
+    <div id="templatesMenu" class="dropdown-content">
+        <!-- התבניות יתווספו כאן דינמית -->
+    </div>
+</div>
       <div class="dropdown">
           <button onclick="toggleWhatsAppMenu()">שלח בווטסאפ ⌄</button>
           <div id="whatsappMenu" class="dropdown-content">
@@ -2408,32 +2406,7 @@ function updateTopicLessons(input) {
     updateTotalLessons();
     saveSubjectsToStorage();
 }
-async function loadTemplate(templateFile) {
-    if (!currentSubject) {
-        showError('יש לבחור מקצוע תחילה');
-        return;
-    }
 
-    try {
-        // טעינת התבנית
-        const response = await window.fs.readFile(`templates/${templateFile}`, { encoding: 'utf8' });
-        
-        // שימוש בפונקציית ייבוא קיימת
-        const file = new File([response], templateFile, {
-            type: 'text/csv',
-            lastModified: new Date()
-        });
-
-        // משתמש בפונקציית הייבוא הקיימת אבל רק לחלק התכנון
-        await importFromCSV(file, 'planning-only');
-        
-        showError(`תבנית "${templateFile.replace('.csv', '')}" נטענה בהצלחה`);
-
-    } catch (error) {
-        console.error('Error loading template:', error);
-        showError('שגיאה בטעינת התבנית');
-    }
-}
 function toggleTemplatesMenu() {
     const menu = document.getElementById('templatesMenu');
     const isHidden = menu.style.display !== 'block';
@@ -2444,7 +2417,7 @@ function toggleTemplatesMenu() {
     document.getElementById('shareMenu').style.display = 'none';
     document.getElementById('whatsappMenu').style.display = 'none';
     
-    // אם התפריט היה מוסתר, נטען את הרשימה לפני הצגתו
+    // אם התפריט היה מוסתר, נטען את הרשימה
     if (isHidden) {
         loadTemplatesList();
     }
@@ -3395,31 +3368,17 @@ function resetFileInput() {
     const fileInput = document.getElementById('csvFileInput');
     if (fileInput) fileInput.value = '';
 }
-async function loadTemplatesList() {
-    try {
-        const files = await window.fs.readdir('templates');
-        const menu = document.getElementById('templatesMenu');
-        menu.innerHTML = ''; // ניקוי התפריט
+function loadTemplatesList() {
+    const menu = document.getElementById('templatesMenu');
+    menu.innerHTML = ''; // ניקוי התפריט
 
-        // סינון רק קבצי CSV
-        const csvFiles = files.filter(file => file.endsWith('.csv'));
-
-        // הוספת קישור לכל קובץ
-        csvFiles.forEach(file => {
-            const a = document.createElement('a');
-            // מציג את שם הקובץ בלי סיומת CSV
-            a.textContent = file.replace('.csv', '');
-            a.onclick = () => loadTemplate(file);
-            menu.appendChild(a);
-        });
-
-    } catch (error) {
-        console.error('Error loading templates list:', error);
-        showError('שגיאה בטעינת רשימת התבניות');
-    }
+    availableTemplates.forEach(template => {
+        const a = document.createElement('a');
+        a.textContent = template.name;
+        a.onclick = () => loadTemplate(template.file);
+        menu.appendChild(a);
+    });
 }
-// Update the file input HTML
-// <input type="file" id="csvFileInput" accept=".csv" style="display: none" onchange="importFromCSV(this.files[0])">
 async function shareFile(type = 'all') {
     if (!currentSubject) {
         showError('יש לבחור מקצוע תחילה');
