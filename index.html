@@ -1167,10 +1167,18 @@ td.non-learning-day {
       <select id="subjectSelect" class="subject-select" onchange="handleSubjectChange()">
           <option value="">בחר מקצוע</option>
       </select>
-  
+
       <button onclick="toggleAddSubjectForm()">הוסף מקצוע</button>
       <button onclick="deleteCurrentSubject()" class="delete-btn">מחק מקצוע</button>
-  
+      
+      <div class="dropdown">
+          <button onclick="toggleWhatsAppMenu()">שלח בווטסאפ ⌄</button>
+          <div id="whatsappMenu" class="dropdown-content">
+              <a onclick="sendToWhatsApp('planning')">שלח תכנון</a>
+              <a onclick="sendToWhatsApp('schedule')">שלח לוז</a>
+              <a onclick="sendToWhatsApp('all')">שלח הכל</a>
+          </div>
+      </div>
       <!-- תפריט ייצוא -->
       <div class="dropdown">
           <button onclick="toggleExportMenu()">ייצוא ⌄</button>
@@ -1180,7 +1188,7 @@ td.non-learning-day {
               <a onclick="handleExportClick('all')">ייצוא הכל</a>
           </div>
       </div>
-  
+
       <!-- הוספת תפריט שיתוף חדש -->
       <div class="dropdown">
           <button onclick="toggleShareMenu()">שתף ⌄</button>
@@ -1190,7 +1198,7 @@ td.non-learning-day {
               <a onclick="shareFile('all')">שתף הכל</a>
           </div>
       </div>
-  
+
       <!-- שאר הכפתורים -->
       <div class="dropdown">
           <button onclick="togglePrintMenu()">הדפסה ⌄</button>
@@ -1200,7 +1208,7 @@ td.non-learning-day {
               <a onclick="printContent('all')">הדפס הכל</a>
           </div>
       </div>
-  
+
       <input type="file" id="csvFileInput" accept=".csv" style="display: none" onchange="importFromCSV(this.files[0])">
       <button onclick="document.getElementById('csvFileInput').click()">ייבא תכנון</button>
   </div>
@@ -1359,7 +1367,8 @@ function toggleWhatsAppMenu() {
     // סגירת תפריטים אחרים
     document.getElementById('exportMenu').style.display = 'none';
     document.getElementById('printMenu').style.display = 'none';
-    // הצגת תפריט ווטסאפ
+    document.getElementById('shareMenu').style.display = 'none';
+    // הצגת/הסתרת תפריט ווטסאפ
     menu.style.display = menu.style.display === 'block' ? 'none' : 'block';
 }
 
@@ -3539,7 +3548,7 @@ function generateExportData(type = 'all') {
         });
     }
 
-    return rows.map(row => 
+    return rows.map(row =>
         row.map(cell => `"${(cell || '').toString().replace(/"/g, '""')}"`).join(',')
     ).join('\n');
 }
@@ -3621,7 +3630,82 @@ async function getWeekLessons(weekDays) {
     }
     return lessons;
 }
+async function sendToWhatsApp(type = 'all') {
+    if (!currentSubject) {
+        showError('יש לבחור מקצוע תחילה');
+        return;
+    }
 
+    // בקשת מספר טלפון
+    let phoneNumber = prompt('הכנס מספר טלפון לשליחה (לדוגמה: 0501234567):');
+    if (!phoneNumber) return;
+
+    // ניקוי המספר מתווים מיוחדים
+    phoneNumber = phoneNumber.replace(/[^0-9]/g, '');
+
+    // בדיקת תקינות המספר
+    if (phoneNumber.length !== 10 || !phoneNumber.startsWith('05')) {
+        showError('מספר טלפון לא תקין');
+        return;
+    }
+
+    try {
+        const data = generateExportData(type);
+        const blob = new Blob(['\ufeff' + data], { type: 'text/csv;charset=utf-8;' });
+        const file = new File([blob], `${currentSubject.name}_${type}.csv`, { type: 'text/csv' });
+
+        // המרת המספר לפורמט בינלאומי
+        phoneNumber = '972' + phoneNumber.substring(1);
+
+        // יצירת הודעה
+        let message = `קובץ תכנון למקצוע ${currentSubject.name}`;
+        if (type === 'planning') {
+            message = `תכנון למקצוע ${currentSubject.name}`;
+        } else if (type === 'schedule') {
+            message = `לוז למקצוע ${currentSubject.name}`;
+        }
+
+        // הוספת תאריכים
+        const startDate = document.getElementById('startDate').value;
+        const endDate = document.getElementById('endDate').value;
+        if (startDate && endDate) {
+            const formattedStartDate = new Date(startDate).toLocaleDateString('he-IL');
+            const formattedEndDate = new Date(endDate).toLocaleDateString('he-IL');
+            message += ` לתקופה ${formattedStartDate} - ${formattedEndDate}`;
+        }
+
+        if (navigator.share && navigator.canShare({ files: [file] })) {
+            // אם נתמך שיתוף קבצים ישיר
+            const shareData = {
+                files: [file],
+                title: message,
+                text: message
+            };
+
+            // פתיחת ווטסאפ עם המספר הספציפי והקובץ
+            await navigator.share(shareData);
+            window.open(`https://wa.me/${phoneNumber}?text=${encodeURIComponent(message)}`, '_blank');
+        } else {
+            // אם לא נתמך שיתוף קבצים, רק פותחים את ווטסאפ עם הודעה
+            window.open(`https://wa.me/${phoneNumber}?text=${encodeURIComponent(message)}`, '_blank');
+            
+            // הורדת הקובץ למחשב
+            const link = document.createElement('a');
+            link.href = URL.createObjectURL(blob);
+            link.download = `${currentSubject.name}_${type}.csv`;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            URL.revokeObjectURL(link.href);
+            
+            showError('הקובץ הורד למחשב. אנא שלח אותו בצ׳אט הווטסאפ שנפתח.');
+        }
+
+    } catch (error) {
+        console.error('Error sending to WhatsApp:', error);
+        showError('שגיאה בשליחה לווטסאפ');
+    }
+}
 function updateTotalLessons() {
     const totalPlanned = Array.from(document.querySelectorAll('.topic-container'))
         .reduce((sum, topic) => sum + (parseInt(topic.querySelector('.topic-lessons').value) || 0), 0);
