@@ -1354,7 +1354,78 @@ const HEBREW_MONTHS = {
     'Av': 'אב',
     'Elul': 'אלול'
 };
+async function importFromCSV(file) {
+    if (!currentSubject) {
+        showError('יש לבחור מקצוע תחילה');
+        resetFileInput();
+        return;
+    }
 
+    try {
+        const reader = new FileReader();
+        reader.onload = async function(event) {
+            const csv = event.target.result;
+            const rows = csv.split('\n')
+                .map(row => row.split(',')
+                .map(cell => cell.trim().replace(/^"|"$/g, '')))
+                .filter(row => row.length > 3);
+
+            // דילוג על שורות כותרת
+            while (rows.length > 0 && (
+                rows[0][0].includes('===') || 
+                rows[0][0].toLowerCase().includes('subject')
+            )) {
+                rows.shift();
+            }
+
+            let currentTopic = null;
+            let topicData = null;
+            currentSubject.topics = [];
+
+            for (const row of rows) {
+                if (row.length < 4) continue;
+                const [subject, topicTitle, subtopicTitle, lessonsStr, notes] = row;
+                
+                if (!topicTitle.trim()) continue;
+
+                if (!currentTopic || currentTopic !== topicTitle) {
+                    if (topicData) {
+                        currentSubject.topics.push(topicData);
+                    }
+                    currentTopic = topicTitle;
+                    topicData = {
+                        title: topicTitle,
+                        lessons: 0,
+                        subtopics: []
+                    };
+                }
+
+                const subtopicLessons = parseInt(lessonsStr) || 1;
+                topicData.lessons += subtopicLessons;
+                topicData.subtopics.push({
+                    title: subtopicTitle.trim() || topicTitle.trim(),
+                    lessons: subtopicLessons,
+                    notes: notes || ''
+                });
+            }
+
+            if (topicData) {
+                currentSubject.topics.push(topicData);
+            }
+
+            saveSubjectsToStorage();
+            await loadSubjectData();
+            showError('הקובץ יובא בהצלחה');
+        };
+
+        reader.readAsText(file);
+    } catch (error) {
+        console.error('Error importing CSV:', error);
+        showError('שגיאה בייבוא הקובץ');
+    } finally {
+        resetFileInput();
+    }
+}
 // === Helper Functions ===
 function showError(message) {
     const error = document.getElementById('error');
