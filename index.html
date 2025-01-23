@@ -1354,78 +1354,7 @@ const HEBREW_MONTHS = {
     'Av': 'אב',
     'Elul': 'אלול'
 };
-async function importFromCSV(file) {
-    if (!currentSubject) {
-        showError('יש לבחור מקצוע תחילה');
-        resetFileInput();
-        return;
-    }
 
-    try {
-        const reader = new FileReader();
-        reader.onload = async function(event) {
-            const csv = event.target.result;
-            const rows = csv.split('\n')
-                .map(row => row.split(',')
-                .map(cell => cell.trim().replace(/^"|"$/g, '')))
-                .filter(row => row.length > 3);
-
-            // דילוג על שורות כותרת
-            while (rows.length > 0 && (
-                rows[0][0].includes('===') || 
-                rows[0][0].toLowerCase().includes('subject')
-            )) {
-                rows.shift();
-            }
-
-            let currentTopic = null;
-            let topicData = null;
-            currentSubject.topics = [];
-
-            for (const row of rows) {
-                if (row.length < 4) continue;
-                const [subject, topicTitle, subtopicTitle, lessonsStr, notes] = row;
-                
-                if (!topicTitle.trim()) continue;
-
-                if (!currentTopic || currentTopic !== topicTitle) {
-                    if (topicData) {
-                        currentSubject.topics.push(topicData);
-                    }
-                    currentTopic = topicTitle;
-                    topicData = {
-                        title: topicTitle,
-                        lessons: 0,
-                        subtopics: []
-                    };
-                }
-
-                const subtopicLessons = parseInt(lessonsStr) || 1;
-                topicData.lessons += subtopicLessons;
-                topicData.subtopics.push({
-                    title: subtopicTitle.trim() || topicTitle.trim(),
-                    lessons: subtopicLessons,
-                    notes: notes || ''
-                });
-            }
-
-            if (topicData) {
-                currentSubject.topics.push(topicData);
-            }
-
-            saveSubjectsToStorage();
-            await loadSubjectData();
-            showError('הקובץ יובא בהצלחה');
-        };
-
-        reader.readAsText(file);
-    } catch (error) {
-        console.error('Error importing CSV:', error);
-        showError('שגיאה בייבוא הקובץ');
-    } finally {
-        resetFileInput();
-    }
-}
 // === Helper Functions ===
 function showError(message) {
     const error = document.getElementById('error');
@@ -3630,6 +3559,99 @@ async function getWeekLessons(weekDays) {
         lessons.push(isLearning ? (currentSubject.lessonsPerDay[i] || 0) : 0);
     }
     return lessons;
+}
+async function importFromCSV(file) {
+    if (!currentSubject) {
+        showError('יש לבחור מקצוע תחילה');
+        resetFileInput();
+        return;
+    }
+
+    try {
+        const reader = new FileReader();
+        reader.onload = async function(event) {
+            console.log("קורא את הקובץ:", file.name);
+            const csv = event.target.result;
+            const rows = csv.split('\n')
+                .map(row => row.split(',')
+                .map(cell => cell.trim().replace(/^"|"$/g, '')))
+                .filter(row => row.length > 3);
+
+            console.log("שורות שנקראו:", rows);
+
+            // דילוג על שורות כותרת
+            while (rows.length > 0 && (
+                rows[0][0].includes('===') || 
+                rows[0][0].toLowerCase().includes('subject')
+            )) {
+                console.log("מדלג על שורת כותרת:", rows[0]);
+                rows.shift();
+            }
+
+            console.log("שורות אחרי סינון כותרות:", rows);
+
+            let currentTopic = null;
+            let topicData = null;
+            currentSubject.topics = [];
+
+            for (const row of rows) {
+                console.log("מעבד שורה:", row);
+                if (row.length < 4) {
+                    console.log("שורה קצרה מדי, מדלג");
+                    continue;
+                }
+                
+                const [subject, topicTitle, subtopicTitle, lessonsStr, notes] = row;
+                console.log("נתונים שחולצו:", { subject, topicTitle, subtopicTitle, lessonsStr, notes });
+
+                if (!topicTitle.trim()) {
+                    console.log("כותרת נושא ריקה, מדלג");
+                    continue;
+                }
+
+                if (!currentTopic || currentTopic !== topicTitle) {
+                    if (topicData) {
+                        console.log("מוסיף נושא קיים:", topicData);
+                        currentSubject.topics.push(topicData);
+                    }
+                    currentTopic = topicTitle;
+                    topicData = {
+                        title: topicTitle,
+                        lessons: 0,
+                        subtopics: []
+                    };
+                    console.log("יצר נושא חדש:", topicData);
+                }
+
+                const subtopicLessons = parseInt(lessonsStr) || 1;
+                topicData.lessons += subtopicLessons;
+                topicData.subtopics.push({
+                    title: subtopicTitle.trim() || topicTitle.trim(),
+                    lessons: subtopicLessons,
+                    notes: notes || ''
+                });
+                console.log("הוסיף תת-נושא:", topicData.subtopics[topicData.subtopics.length - 1]);
+            }
+
+            if (topicData) {
+                console.log("מוסיף נושא אחרון:", topicData);
+                currentSubject.topics.push(topicData);
+            }
+
+            console.log("נושאים סופיים:", currentSubject.topics);
+            
+            saveSubjectsToStorage();
+            await loadSubjectData();
+            showError('הקובץ יובא בהצלחה');
+        };
+
+        reader.readAsText(file);
+    } catch (error) {
+        console.error('Error importing CSV:', error);
+        showError('שגיאה בייבוא הקובץ');
+    } finally {
+        resetFileInput();
+    }
 }
 async function sendToWhatsApp(type = 'all') {
     if (!currentSubject) {
