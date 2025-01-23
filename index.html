@@ -3653,6 +3653,64 @@ async function importFromCSV(file) {
         resetFileInput();
     }
 }
+async function importFromCSV(file) {
+    if (!currentSubject) {
+        showError('יש לבחור מקצוע תחילה');
+        resetFileInput();
+        return;
+    }
+
+    try {
+        currentSubject.topics = []; // איפוס הנושאים הקיימים
+        
+        const reader = new FileReader();
+        reader.onload = async function(event) {
+            const csv = event.target.result;
+            const rows = csv.split('\n')
+                .map(row => row.split(',')
+                .map(cell => cell.trim().replace(/^"|"$/g, '')))
+                .filter(row => row.length > 3);
+
+            let currentTopic = null;
+
+            for (const row of rows) {
+                if (row.length < 4) continue;
+                
+                const [subject, topicTitle, subtopicTitle, lessonsStr, notes] = row;
+                if (!topicTitle.trim()) continue;
+
+                if (!currentTopic || currentTopic.title !== topicTitle) {
+                    currentTopic = {
+                        title: topicTitle,
+                        lessons: 0,
+                        subtopics: []
+                    };
+                    currentSubject.topics.push(currentTopic);
+                }
+
+                const subtopicLessons = parseInt(lessonsStr) || 1;
+                currentTopic.lessons += subtopicLessons;
+                currentTopic.subtopics.push({
+                    title: subtopicTitle.trim() || topicTitle.trim(),
+                    lessons: subtopicLessons,
+                    notes: notes || ''
+                });
+            }
+
+            await saveSubjectsToStorage();
+            await switchTab(null, 'planning-tab');
+            await loadSubjectData();
+            showError('הקובץ יובא בהצלחה');
+        };
+
+        reader.readAsText(file);
+    } catch (error) {
+        console.error('Error importing CSV:', error);
+        showError('שגיאה בייבוא הקובץ');
+    } finally {
+        resetFileInput();
+    }
+}
 async function sendToWhatsApp(type = 'all') {
     if (!currentSubject) {
         showError('יש לבחור מקצוע תחילה');
