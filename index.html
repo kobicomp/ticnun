@@ -4092,8 +4092,8 @@ function formatDate(date) {
 }
 function calculateSchoolYearDates(year) {
    const startDate = new Date(year, 8, 1);
-   startDate.setDate(startDate.getDate() + 1);  // מוסיף יום
-   const endDate = new Date(year + 1, 5, 30);
+   startDate.setDate(startDate.getDate() + 1);  // Додає день, встановлюючи 1 вересня
+   const endDate = new Date(year + 1, 6, 0);  // Останній день червня
 
    return {
        start: formatDate(startDate),
