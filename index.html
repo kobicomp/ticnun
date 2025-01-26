@@ -4026,35 +4026,34 @@ function askForImportType() {
     });
 }
 async function generateSchoolYears() {
-    const currentDate = new Date();
-    const currentYear = currentDate.getFullYear();
-    const currentMonth = currentDate.getMonth() + 1;
+   const currentDate = new Date();
+   const currentYear = currentDate.getFullYear();
+   const currentMonth = currentDate.getMonth() + 1;
 
-    // If we're in Jul-Aug, show next year as current
-    const adjustedYear = currentMonth >= 7 ? currentYear : currentYear - 1;
+   // אם אנחנו בחודשים יולי-אוגוסט, נתחיל מהשנה הבאה
+   const adjustedYear = currentMonth >= 7 ? currentYear + 1 : currentYear;
 
-    const years = [];
-    const startYear = adjustedYear - 5;
-    const endYear = adjustedYear + 5;
+   const years = [];
+   const startYear = adjustedYear - 5;
+   const endYear = adjustedYear + 5;
 
-    for (let year = startYear; year <= endYear; year++) {
-        const tishriDate = new Date(year, 8, 15); // September 15th
-        const hebrewYear = await getHebrewYearForDate(tishriDate);
-        if (hebrewYear) {
-            const letter = getHebrewYearLetter(hebrewYear);
-            years.push({
-                value: year,
-                label: `תשפ"${letter} - ${year}/${year + 1}`
-            });
-        }
-    }
+   for (let year = startYear; year <= endYear; year++) {
+       const hebrewYear = await getHebrewYearForDate(new Date(year, 8, 1));
+       if (hebrewYear) {
+           const letter = getHebrewYearLetter(hebrewYear);
+           years.push({
+               value: year,
+               label: `תשפ"${letter} - ${year}/${year + 1}`
+           });
+       }
+   }
 
-    const select = document.getElementById('schoolYear');
-    select.innerHTML = years.map(year =>
-        `<option value="${year.value}" ${year.value === adjustedYear ? 'selected' : ''}>
-            ${year.label}
-        </option>`
-    ).join('');
+   const select = document.getElementById('schoolYear');
+   select.innerHTML = years.map(year =>
+       `<option value="${year.value}" ${year.value === adjustedYear ? 'selected' : ''}>
+           ${year.label}
+       </option>`
+   ).join('');
 }
 
 async function updateDates() {
@@ -4078,13 +4077,16 @@ function formatDate(date) {
     return date.toISOString().split('T')[0];
 }
 function calculateSchoolYearDates(year) {
-    const startDate = new Date(year, 8, 1);  // 1 בספטמבר
-    const endDate = new Date(year + 1, 5, 30);  // 30 ביוני
+   const startDate = new Date(year, 8, 1);  // 1 בספטמבר
+   const endDate = new Date(year + 1, 5, 30);  // 30 ביוני
 
-    return {
-        start: formatDate(startDate),
-        end: formatDate(endDate)
-    };
+   // הוספת יום אחד כדי לכסות את כל התאריכים
+   endDate.setDate(endDate.getDate() + 1);
+
+   return {
+       start: formatDate(startDate),
+       end: formatDate(endDate)
+   };
 }
 async function getWeekLessons(weekDays) {
     if (!currentSubject) return Array(6).fill(0);
