@@ -4025,6 +4025,20 @@ function askForImportType() {
         resolve(result ? 'new' : 'existing');
     });
 }
+async function testHebrewYear(year) {
+    const dates = [
+        new Date(year, 0, 1),   // 1 בינואר
+        new Date(year, 8, 1)    // 1 בספטמבר
+    ];
+
+    for (let date of dates) {
+        const hebrewYear = await getHebrewYearForDate(date);
+        console.log(`
+            Date: ${date.toISOString()}
+            Hebrew Year: ${hebrewYear}
+        `);
+    }
+}
 async function generateSchoolYears() {
     const currentDate = new Date();
     const currentYear = currentDate.getFullYear();
@@ -4229,6 +4243,7 @@ function togglePlanningSection() {
 async function initializeApp() {
     try {
         loadSubjectsFromStorage();
+        testHebrewYear(2024);
         await generateSchoolYears();
         await updateDates();
         await populateTemplatesDropdown(); // הוספת שורה זו
