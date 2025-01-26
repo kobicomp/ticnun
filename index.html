@@ -4090,8 +4090,9 @@ async function updateDates() {
 
 function calculateSchoolYearDates(year) {
    const startDate = new Date(year, 8, 1);
-   startDate.setDate(startDate.getDate() + 1);  // Додає день, встановлюючи 1 вересня
-   const endDate = new Date(year + 1, 5, 30);  // Останній день червня
+   startDate.setDate(startDate.getDate() + 1);
+   const endDate = new Date(year + 1, 5, 30);
+   endDate.setDate(endDate.getDate() + 1);
 
    return {
        start: formatDate(startDate),
