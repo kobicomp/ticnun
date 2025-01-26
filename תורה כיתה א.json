@@ -1,225 +1,115 @@
 {
   "metadata": {
     "version": "1.0",
-    "exportDate": "2025-01-25T22:04:02.435Z",
-    "subjectName": "תורה הדר כהן"
+    "exportDate": "2025-01-26T18:57:10.186Z",
+    "subjectName": "תורה כיתה א"
   },
   "planning": {
     "topics": [
       {
-        "title": "וירא",
-        "lessons": 10,
+        "title": "הבריאה ואבות האנושות",
+        "lessons": 33,
         "subtopics": [
           {
-            "title": "",
-            "lessons": 1,
-            "notes": "מכת הדם"
-          },
-          {
-            "title": "",
-            "lessons": 1,
+            "title": "ימי הבריאה והשבת",
+            "lessons": 12,
             "notes": ""
           },
           {
-            "title": "",
-            "lessons": 1,
+            "title": "יצירת האדם והאישה",
+            "lessons": 6,
             "notes": ""
           },
           {
-            "title": "",
-            "lessons": 1,
+            "title": "האכילה מעץ הדעת",
+            "lessons": 6,
             "notes": ""
           },
           {
-            "title": "",
-            "lessons": 1,
+            "title": "קין והבל",
+            "lessons": 7,
             "notes": ""
           },
           {
-            "title": "",
-            "lessons": 1,
-            "notes": ""
-          },
-          {
-            "title": "",
-            "lessons": 1,
-            "notes": ""
-          },
-          {
-            "title": "",
-            "lessons": 1,
-            "notes": ""
-          },
-          {
-            "title": "",
-            "lessons": 1,
-            "notes": ""
-          },
-          {
-            "title": "",
-            "lessons": 1,
+            "title": "ספר תולדות האדם",
+            "lessons": 2,
             "notes": ""
           }
         ]
       },
       {
-        "title": "בא",
-        "lessons": 15,
+        "title": "נח והמבול",
+        "lessons": 25,
         "subtopics": [
           {
-            "title": "",
-            "lessons": 1,
+            "title": "בני נח",
+            "lessons": 2,
             "notes": ""
           },
           {
-            "title": "",
-            "lessons": 1,
+            "title": "ההכנות למבול",
+            "lessons": 4,
             "notes": ""
           },
           {
-            "title": "",
-            "lessons": 1,
+            "title": "המבול",
+            "lessons": 4,
             "notes": ""
           },
           {
-            "title": "",
-            "lessons": 1,
+            "title": "היציאה מהתיבה והקרבן",
+            "lessons": 4,
             "notes": ""
           },
           {
-            "title": "",
-            "lessons": 1,
+            "title": "הקשת, נח ובניו לאחר המבול",
+            "lessons": 5,
             "notes": ""
           },
           {
-            "title": "",
-            "lessons": 1,
+            "title": "צאצאי נח ותפוצתם",
+            "lessons": 3,
             "notes": ""
           },
           {
-            "title": "",
-            "lessons": 1,
-            "notes": ""
-          },
-          {
-            "title": "",
-            "lessons": 1,
-            "notes": ""
-          },
-          {
-            "title": "",
-            "lessons": 1,
-            "notes": ""
-          },
-          {
-            "title": "",
-            "lessons": 1,
-            "notes": ""
-          },
-          {
-            "title": "",
-            "lessons": 1,
-            "notes": ""
-          },
-          {
-            "title": "",
-            "lessons": 1,
-            "notes": ""
-          },
-          {
-            "title": "",
-            "lessons": 1,
-            "notes": ""
-          },
-          {
-            "title": "",
-            "lessons": 1,
-            "notes": ""
-          },
-          {
-            "title": "",
-            "lessons": 1,
+            "title": "עשרה דורות מאדם ועד נח",
+            "lessons": 3,
             "notes": ""
           }
         ]
       },
       {
-        "title": "בשלח",
-        "lessons": 15,
+        "title": "אברהם אבינו",
+        "lessons": 22,
         "subtopics": [
           {
-            "title": "",
-            "lessons": 1,
+            "title": "מסעות אברם לכנען",
+            "lessons": 4,
             "notes": ""
           },
           {
-            "title": "",
-            "lessons": 1,
+            "title": "אברם ולוט, הבטחת הארץ",
+            "lessons": 3,
             "notes": ""
           },
           {
-            "title": "",
-            "lessons": 1,
+            "title": "מלחמת ארבעת המלכים",
+            "lessons": 5,
             "notes": ""
           },
           {
-            "title": "",
-            "lessons": 1,
+            "title": "ברית בין הבתרים",
+            "lessons": 3,
             "notes": ""
           },
           {
-            "title": "",
-            "lessons": 1,
+            "title": "הגר וישמעאל",
+            "lessons": 2,
             "notes": ""
           },
           {
-            "title": "",
-            "lessons": 1,
-            "notes": ""
-          },
-          {
-            "title": "",
-            "lessons": 1,
-            "notes": ""
-          },
-          {
-            "title": "",
-            "lessons": 1,
-            "notes": ""
-          },
-          {
-            "title": "",
-            "lessons": 1,
-            "notes": ""
-          },
-          {
-            "title": "",
-            "lessons": 1,
-            "notes": ""
-          },
-          {
-            "title": "",
-            "lessons": 1,
-            "notes": ""
-          },
-          {
-            "title": "",
-            "lessons": 1,
-            "notes": ""
-          },
-          {
-            "title": "",
-            "lessons": 1,
-            "notes": ""
-          },
-          {
-            "title": "",
-            "lessons": 1,
-            "notes": ""
-          },
-          {
-            "title": "",
-            "lessons": 1,
+            "title": "ברית המילה",
+            "lessons": 5,
             "notes": ""
           }
         ]
