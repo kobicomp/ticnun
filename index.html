@@ -4091,8 +4091,9 @@ function formatDate(date) {
     return date.toISOString().split('T')[0];
 }
 function calculateSchoolYearDates(year) {
-   const startDate = new Date(year, 8, 1);  // 1 вересня
-   const endDate = new Date(year + 1, 5, 30);  // 30 червня
+   const startDate = new Date(year, 8, 1);
+   startDate.setDate(startDate.getDate() + 1);  // מוסיף יום
+   const endDate = new Date(year + 1, 5, 30);
 
    return {
        start: formatDate(startDate),
