@@ -1160,7 +1160,7 @@ td.non-learning-day {
 <body>
    <div class="container">
        <h1>לוח שיעורים שנתי</h1>
-
+<select id="templateSelector"></select>
        <!-- בחירת מקצוע -->
 <div class="subjects-section">
   <div class="subject-controls">
@@ -1491,6 +1491,33 @@ async function importSpecificTemplate(filename) {
     } catch (error) {
         console.error('Error importing template:', error);
         showError('לא ניתן לייבא את התבנית');
+    }
+}
+async function populateTemplatesDropdown() {
+    const repoUrl = 'https://api.github.com/repos/kobicomp/ticnun/contents';
+    const select = document.getElementById('templateSelector');
+    
+    try {
+        const response = await fetch(repoUrl);
+        const files = await response.json();
+        
+        const jsonTemplates = files
+            .filter(file => file.name.endsWith('.json'))
+            .map(file => file.name);
+        
+        select.innerHTML = '<option value="">טען תוכניות מוכנות</option>';
+        
+        jsonTemplates.forEach(template => {
+            const option = document.createElement('option');
+            option.value = template;
+            option.textContent = template;
+            select.appendChild(option);
+        });
+        
+        select.onchange = () => importSpecificTemplate(select.value);
+    } catch (error) {
+        console.error('Error listing templates:', error);
+        showError('לא ניתן לטעון את רשימת התבניות');
     }
 }
 async function importTemplateFromGitHub() {
@@ -4189,6 +4216,7 @@ async function initializeApp() {
         loadSubjectsFromStorage();
         await generateSchoolYears();
         await updateDates();
+        await populateTemplatesDropdown(); // הוספת שורה זו
     } catch (error) {
         console.error('Error initializing app:', error);
         showError('שגיאה באתחול האפליקציה');
