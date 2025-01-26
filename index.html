@@ -4030,7 +4030,6 @@ async function generateSchoolYears() {
     const currentYear = currentDate.getFullYear();
     const currentMonth = currentDate.getMonth() + 1;
 
-    // אם אנחנו בחודשים יולי-אוגוסט, נתחיל מהשנה הבאה
     const adjustedYear = currentMonth >= 7 ? currentYear + 1 : currentYear;
 
     const years = [];
