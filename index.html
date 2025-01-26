@@ -1796,7 +1796,7 @@ function showError(message) {
 }
 
 function formatDate(date) {
-    return date.toISOString().split('T')[0];
+    return date.toLocaleDateString('en-CA');
 }
 
 // נוסיף את הפונקציות החדשות:
@@ -4087,9 +4087,7 @@ async function updateDates() {
 
    generateTable();
 }
-function formatDate(date) {
-    return date.toISOString().split('T')[0];
-}
+
 function calculateSchoolYearDates(year) {
    const startDate = new Date(year, 8, 1);
    startDate.setDate(startDate.getDate() + 1);  // Додає день, встановлюючи 1 вересня
