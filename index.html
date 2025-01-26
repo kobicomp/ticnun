@@ -1170,13 +1170,7 @@ td.non-learning-day {
 
       <button onclick="toggleAddSubjectForm()">הוסף מקצוע</button>
       <button onclick="deleteCurrentSubject()" class="delete-btn">מחק מקצוע</button>
-      <!-- להוסיף בתוך div.subject-controls -->
-      <div class="dropdown">
-    <button onclick="toggleTemplatesMenu()">תבניות מוכנות ⌄</button>
-    <div id="templatesMenu" class="dropdown-content">
-        <!-- התבניות יתווספו כאן דינמית -->
-    </div>
-</div>
+
       <div class="dropdown">
           <button onclick="toggleWhatsAppMenu()">שלח בווטסאפ ⌄</button>
           <div id="whatsappMenu" class="dropdown-content">
@@ -1189,11 +1183,14 @@ td.non-learning-day {
       <div class="dropdown">
           <button onclick="toggleExportMenu()">ייצוא ⌄</button>
           <div id="exportMenu" class="dropdown-content">
-              <a onclick="handleExportClick('planning')">ייצוא תכנון</a>
-              <a onclick="handleExportClick('schedule')">ייצוא לוז</a>
-              <a onclick="handleExportClick('all')">ייצוא הכל</a>
+              <a onclick="askExportFormat('planning')">ייצוא תכנון</a>
+              <a onclick="askExportFormat('schedule')">ייצוא לוז</a>
+              <a onclick="askExportFormat('all')">ייצוא הכל</a>
           </div>
       </div>
+      <!-- Import button -->
+<input type="file" id="fileInput" accept=".csv,.json" style="display: none" onchange="handleFileImport(this.files[0])">
+<button onclick="document.getElementById('fileInput').click()">ייבא קובץ</button>
 
       <!-- הוספת תפריט שיתוף חדש -->
       <div class="dropdown">
@@ -1206,6 +1203,7 @@ td.non-learning-day {
       </div>
 
       <!-- שאר הכפתורים -->
+      <button onclick="importTemplateFromGitHub()">ייבא תבנית שיעור</button>
       <div class="dropdown">
           <button onclick="togglePrintMenu()">הדפסה ⌄</button>
           <div id="printMenu" class="dropdown-content">
@@ -1215,8 +1213,6 @@ td.non-learning-day {
           </div>
       </div>
 
-      <input type="file" id="csvFileInput" accept=".csv" style="display: none" onchange="importFromCSV(this.files[0])">
-      <button onclick="document.getElementById('csvFileInput').click()">ייבא תכנון</button>
   </div>
     <div id="addSubjectForm">
         <input type="text" id="newSubjectInput" placeholder="שם המקצוע">
@@ -1310,6 +1306,269 @@ td.non-learning-day {
 <script>
 // === Tab Functions ===
 // עדכון פונקציית switchTab
+async function exportToJSON(type = 'all') {
+    if (!currentSubject) {
+        showError('יש לבחור מקצוע תחילה');
+        return;
+    }
+
+    try {
+        let data = {
+            metadata: {
+                version: '1.0',
+                exportDate: new Date().toISOString(),
+                subjectName: currentSubject.name
+            }
+        };
+
+        if (type === 'planning' || type === 'all') {
+            data.planning = {
+                topics: getTopicsData()
+            };
+        }
+
+        if (type === 'schedule' || type === 'all') {
+            data.schedule = {
+                startDate: document.getElementById('startDate').value,
+                endDate: document.getElementById('endDate').value,
+                lessonsPerDay: currentSubject.lessonsPerDay,
+                lessonChanges: currentSubject.lessonChanges
+            };
+        }
+
+        const jsonStr = JSON.stringify(data, null, 2);
+        const blob = new Blob([jsonStr], { type: 'application/json' });
+        const link = document.createElement('a');
+        const date = new Date().toLocaleDateString('he-IL').replace(/\./g, '-');
+
+        link.href = URL.createObjectURL(blob);
+        link.download = `${currentSubject.name}_${type}_${date}.json`;
+        link.click();
+        URL.revokeObjectURL(link.href);
+
+    } catch (error) {
+        console.error('Error exporting JSON:', error);
+        showError('שגיאה בייצוא הקובץ');
+    }
+}
+async function importTemplateFromGitHub() {
+    const fileUrl = 'https://raw.githubusercontent.com/kobicomp/ticnun/main/%D7%AA%D7%95%D7%A8%D7%94%20%D7%94%D7%93%D7%A8%20%D7%9B%D7%94%D7%9F_planning_2025-01-25.json';
+    
+    try {
+        const response = await fetch(fileUrl);
+        const jsonContent = await response.json();
+        
+        await importFromJSON(new File([JSON.stringify(jsonContent)], 'template.json', { type: 'application/json' }));
+    } catch (error) {
+        console.error('Error importing file:', error);
+        showError('לא ניתן לייבא את הקובץ');
+    }
+}
+function handleFileImport(file) {
+    if (!file) return;
+
+    if (file.name.endsWith('.json')) {
+        importFromJSON(file);
+    } else if (file.name.endsWith('.csv')) {
+        importFromCSV(file);
+    } else {
+        showError('פורמט קובץ לא נתמך');
+        resetFileInput();
+    }
+}
+function resetFileInput() {
+    const fileInputs = [
+        document.getElementById('fileInput'),
+        document.getElementById('csvFileInput')
+    ];
+
+    fileInputs.forEach(input => {
+        if (input) input.value = '';
+    });
+}
+
+// עדכון לפונקציה הקיימת
+function handleExportClick(type) {
+    document.getElementById('exportMenu').style.display = 'none';
+    const format = prompt('בחר פורמט לייצוא (json/csv):', 'json').toLowerCase();
+
+    if (format === 'json') {
+        exportToJSON(type);
+    } else if (format === 'csv') {
+        exportToCSV(type);
+    } else {
+        showError('פורמט לא נתמך');
+    }
+}
+async function exportToJSON(type = 'all') {
+    if (!currentSubject) {
+        showError('יש לבחור מקצוע תחילה');
+        return;
+    }
+
+    try {
+        let data = {
+            metadata: {
+                version: '1.0',
+                exportDate: new Date().toISOString(),
+                subjectName: currentSubject.name
+            }
+        };
+
+        if (type === 'planning' || type === 'all') {
+            data.planning = {
+                topics: getTopicsData()
+            };
+        }
+
+        if (type === 'schedule' || type === 'all') {
+            data.schedule = {
+                startDate: document.getElementById('startDate').value,
+                endDate: document.getElementById('endDate').value,
+                lessonsPerDay: currentSubject.lessonsPerDay,
+                lessonChanges: currentSubject.lessonChanges
+            };
+        }
+
+        const jsonStr = JSON.stringify(data, null, 2);
+        const blob = new Blob([jsonStr], { type: 'application/json' });
+        const link = document.createElement('a');
+        const date = new Date().toLocaleDateString('he-IL').replace(/\./g, '-');
+
+        link.href = URL.createObjectURL(blob);
+        link.download = `${currentSubject.name}_${type}_${date}.json`;
+        link.click();
+        URL.revokeObjectURL(link.href);
+
+    } catch (error) {
+        console.error('Error exporting JSON:', error);
+        showError('שגיאה בייצוא הקובץ');
+    }
+}
+
+async function importFromJSON(file) {
+    if (!file) {
+        showError('נא לבחור קובץ');
+        resetFileInput();
+        return;
+    }
+
+    try {
+        const text = await file.text();
+        const data = JSON.parse(text);
+
+        if (!data.metadata || !data.metadata.version) {
+            showError('פורמט קובץ לא תקין');
+            return;
+        }
+
+        const importType = await new Promise(resolve => {
+            if (confirm('האם לייבא למקצוע חדש? לחץ "אישור" לחדש או "ביטול" למקצוע קיים')) {
+                const name = prompt('הכנס שם למקצוע החדש:', data.metadata.subjectName);
+                if (!name) {
+                    resolve(null);
+                    return;
+                }
+                if (subjects.has(name)) {
+                    showError('מקצוע זה כבר קיים');
+                    resolve(null);
+                    return;
+                }
+                resolve({ type: 'new', name });
+            } else {
+                if (subjects.size === 0) {
+                    showError('אין מקצועות קיימים');
+                    resolve(null);
+                    return;
+                }
+
+                const subjectsList = Array.from(subjects.keys());
+                const selectHtml = subjectsList.map((subject, i) => `${i + 1}. ${subject}`).join('\n');
+                const selectedIndex = prompt(`בחר מקצוע:\n\n${selectHtml}`);
+
+                if (!selectedIndex) {
+                    resolve(null);
+                    return;
+                }
+
+                const selectedSubject = subjectsList[parseInt(selectedIndex) - 1];
+                if (!selectedSubject) {
+                    showError('בחירה לא תקינה');
+                    resolve(null);
+                    return;
+                }
+
+                resolve({ type: 'existing', name: selectedSubject });
+            }
+        });
+
+        if (!importType) {
+            resetFileInput();
+            return;
+        }
+
+        let targetSubject;
+        if (importType.type === 'new') {
+            targetSubject = {
+                name: importType.name,
+                lessonsPerDay: [0,0,0,0,0,0],
+                topics: [],
+                startDate: document.getElementById('startDate').value,
+                endDate: document.getElementById('endDate').value,
+                lastUpdate: new Date().toISOString(),
+                lessonChanges: {
+                    cancelledLessons: [],
+                    cancelledDays: [],
+                    added: []
+                }
+            };
+        } else {
+            const existingSubject = subjects.get(importType.name);
+            targetSubject = {
+                ...existingSubject,
+                topics: [],
+                lastUpdate: new Date().toISOString()
+            };
+        }
+
+        // טעינת נושאים מהקובץ
+        if (data.planning && data.planning.topics) {
+            targetSubject.topics = data.planning.topics.map(topic => ({
+                title: topic.title || '',
+                lessons: topic.subtopics.reduce((sum, sub) => sum + (sub.lessons || 0), 0),
+                subtopics: topic.subtopics.map(subtopic => ({
+                    title: subtopic.title || '',
+                    lessons: subtopic.lessons || 0,
+                    notes: subtopic.notes || ''
+                }))
+            }));
+        }
+
+        // עדכון שורות זמנים אם קיימות
+        if (data.schedule) {
+            if (data.schedule.startDate) targetSubject.startDate = data.schedule.startDate;
+            if (data.schedule.endDate) targetSubject.endDate = data.schedule.endDate;
+            if (data.schedule.lessonsPerDay) targetSubject.lessonsPerDay = data.schedule.lessonsPerDay;
+        }
+
+        subjects.set(targetSubject.name, targetSubject);
+        saveSubjectsToStorage();
+        updateSubjectSelect();
+
+        document.getElementById('subjectSelect').value = targetSubject.name;
+        currentSubject = targetSubject;
+        await loadSubjectData();
+        await generateTable();
+
+        showError('הנתונים יובאו בהצלחה');
+
+    } catch (error) {
+        console.error('Error importing JSON:', error);
+        showError('שגיאה בייבוא הקובץ');
+    } finally {
+        resetFileInput();
+    }
+}
 function switchTab(event, tabId) {
    document.querySelectorAll('.tab-button').forEach(button => {
        button.classList.remove('active');
@@ -2407,25 +2666,6 @@ function updateTopicLessons(input) {
     saveSubjectsToStorage();
 }
 
-function toggleTemplatesMenu() {
-    const menu = document.getElementById('templatesMenu');
-    const isHidden = menu.style.display !== 'block';
-    
-    // סגירת תפריטים אחרים
-    document.getElementById('exportMenu').style.display = 'none';
-    document.getElementById('printMenu').style.display = 'none';
-    document.getElementById('shareMenu').style.display = 'none';
-    document.getElementById('whatsappMenu').style.display = 'none';
-    
-    // אם התפריט היה מוסתר, נטען את הרשימה
-    if (isHidden) {
-        loadTemplatesList();
-    }
-    
-    // הצגת/הסתרת התפריט
-    menu.style.display = isHidden ? 'block' : 'none';
-}
-
 function getTotalSubtopicLessons(topicContainer) {
     let total = 0;
     topicContainer.querySelectorAll('.subtopic-lessons').forEach(input => {
@@ -3288,51 +3528,146 @@ function parseDate(dateStr) {
 }
 // Add file input reset function
 function resetFileInput() {
-    const fileInput = document.getElementById('csvFileInput');
-    fileInput.value = ''; // Reset the file input
+    const fileInputs = [
+        document.getElementById('fileInput'),
+        document.getElementById('csvFileInput')
+    ];
+
+    fileInputs.forEach(input => {
+        if (input) input.value = '';
+    });
 }
 
-async function loadTemplate(templateFile) {
-    if (!currentSubject) {
-        showError('יש לבחור מקצוע תחילה');
+async function importFromCSV(file) {
+    if (!file) {
+        showError('נא לבחור קובץ');
+        resetFileInput();
         return;
     }
 
     try {
-        // קריאת הקובץ מהשרת
-        const response = await window.fs.readFile(`templates/${templateFile}`, { encoding: 'utf8' });
-        
-        // פענוח ה-CSV
-        const rows = response.split('\n').map(row => 
-            row.split(',').map(cell => cell.trim().replace(/^"|"$/g, ''))
-        ).filter(row => row.length > 0);
+        const text = await file.text();
+        const rows = text.split('\n').map(row => {
+            return row.split(',').map(cell => cell.trim().replace(/^"|"$/g, ''));
+        }).filter(row => row.length > 0);
 
-        // מחיקת כותרות אם קיימות
+        // הסרת שורות כותרת
         while (rows.length > 0 && (
-            rows[0][0].includes('===') || 
-            rows[0][0].toLowerCase().includes('subject')
+            rows[0][0].includes('===') ||
+            rows[0][0].toLowerCase().includes('subject') ||
+            rows[0][0].toLowerCase().includes('מקצוע')
         )) {
             rows.shift();
         }
 
-        // איפוס הנושאים במקצוע הנוכחי
-        currentSubject.topics = [];
+        // מציאת שם המקצוע מהקובץ
+        const subjectFromFile = rows[0]?.[0];
+        if (!subjectFromFile) {
+            showError('קובץ לא תקין - חסר שם מקצוע');
+            return;
+        }
 
-        // עיבוד הנתונים
+        const importType = await new Promise(resolve => {
+            if (confirm('האם לייבא למקצוע חדש? לחץ "אישור" לחדש או "ביטול" למקצוע קיים')) {
+                const name = prompt('הכנס שם למקצוע החדש:', subjectFromFile);
+                if (!name) {
+                    resolve(null);
+                    return;
+                }
+                if (subjects.has(name)) {
+                    showError('מקצוע זה כבר קיים');
+                    resolve(null);
+                    return;
+                }
+                resolve({ type: 'new', name });
+            } else {
+                if (subjects.size === 0) {
+                    showError('אין מקצועות קיימים');
+                    resolve(null);
+                    return;
+                }
+
+                const subjectsList = Array.from(subjects.keys());
+                const selectHtml = subjectsList.map((subject, i) => `${i + 1}. ${subject}`).join('\n');
+                const selectedIndex = prompt(`בחר מקצוע:\n\n${selectHtml}`);
+
+                if (!selectedIndex) {
+                    resolve(null);
+                    return;
+                }
+
+                const selectedSubject = subjectsList[parseInt(selectedIndex) - 1];
+                if (!selectedSubject) {
+                    showError('בחירה לא תקינה');
+                    resolve(null);
+                    return;
+                }
+
+                // בדיקת התאמה בין המקצוע בקובץ למקצוע שנבחר
+                if (selectedSubject !== subjectFromFile) {
+                    if (!confirm(`שים לב: שם המקצוע בקובץ (${subjectFromFile}) שונה מהמקצוע שבחרת (${selectedSubject}). להמשיך?`)) {
+                        resolve(null);
+                        return;
+                    }
+                }
+
+                if (!confirm(`האם אתה בטוח שברצונך לייבא למקצוע "${selectedSubject}"? פעולה זו תחליף את התכנון הקיים.`)) {
+                    resolve(null);
+                    return;
+                }
+
+                resolve({ type: 'existing', name: selectedSubject });
+            }
+        });
+
+        if (!importType) {
+            resetFileInput();
+            return;
+        }
+
+        let targetSubject;
+        if (importType.type === 'new') {
+            targetSubject = {
+                name: importType.name,
+                lessonsPerDay: [0,0,0,0,0,0],
+                topics: [],
+                startDate: document.getElementById('startDate').value,
+                endDate: document.getElementById('endDate').value,
+                lastUpdate: new Date().toISOString(),
+                lessonChanges: {
+                    cancelledLessons: [],
+                    cancelledDays: [],
+                    added: []
+                }
+            };
+        } else {
+            const existingSubject = subjects.get(importType.name);
+            targetSubject = {
+                ...existingSubject,
+                topics: [],
+                lastUpdate: new Date().toISOString()
+            };
+        }
+
+        // עיבוד הנושאים
         let currentTopic = null;
         let topicData = null;
+        let currentTopicLessons = 0;
 
         for (const row of rows) {
             if (row.length < 4) continue;
 
-            const [subject, topicTitle, subtopicTitle, lessonsStr, notes] = row;
+            const [_, topicTitle, subtopicTitle, lessonsStr, notes] = row;
             if (!topicTitle.trim()) continue;
 
+            // טיפול בנושא חדש
             if (!currentTopic || currentTopic !== topicTitle) {
                 if (topicData) {
-                    currentSubject.topics.push(topicData);
+                    topicData.lessons = currentTopicLessons;
+                    targetSubject.topics.push(topicData);
                 }
                 currentTopic = topicTitle;
+                currentTopicLessons = 0;
                 topicData = {
                     title: topicTitle,
                     lessons: 0,
@@ -3340,45 +3675,57 @@ async function loadTemplate(templateFile) {
                 };
             }
 
+            // חישוב מספר השיעורים
             const subtopicLessons = parseInt(lessonsStr) || 1;
-            topicData.lessons += subtopicLessons;
-            topicData.subtopics.push({
+            currentTopicLessons += subtopicLessons;
+
+            // טיפול בתת-נושא
+            const subtopic = {
                 title: subtopicTitle.trim() || topicTitle.trim(),
                 lessons: subtopicLessons,
                 notes: notes || ''
-            });
+            };
+            topicData.subtopics.push(subtopic);
         }
 
         // הוספת הנושא האחרון
         if (topicData) {
-            currentSubject.topics.push(topicData);
+            topicData.lessons = currentTopicLessons;
+            targetSubject.topics.push(topicData);
         }
 
-        // שמירה ועדכון
+        subjects.set(targetSubject.name, targetSubject);
         saveSubjectsToStorage();
+        updateSubjectSelect();
+
+        document.getElementById('subjectSelect').value = targetSubject.name;
+        currentSubject = targetSubject;
         await loadSubjectData();
-        showError(`תבנית "${templateFile.replace('.csv', '')}" נטענה בהצלחה`);
+        await generateTable();
+
+        showError('הנתונים יובאו בהצלחה');
 
     } catch (error) {
-        console.error('Error loading template:', error);
-        showError('שגיאה בטעינת התבנית');
+        console.error('Error importing CSV:', error);
+        showError('שגיאה בקריאת הקובץ');
+    } finally {
+        resetFileInput();
     }
 }
-function resetFileInput() {
-    const fileInput = document.getElementById('csvFileInput');
-    if (fileInput) fileInput.value = '';
-}
-function loadTemplatesList() {
-    const menu = document.getElementById('templatesMenu');
-    menu.innerHTML = ''; // ניקוי התפריט
 
-    availableTemplates.forEach(template => {
-        const a = document.createElement('a');
-        a.textContent = template.name;
-        a.onclick = () => loadTemplate(template.file);
-        menu.appendChild(a);
+function resetFileInput() {
+    const fileInputs = [
+        document.getElementById('fileInput'),
+        document.getElementById('csvFileInput')
+    ];
+
+    fileInputs.forEach(input => {
+        if (input) input.value = '';
     });
 }
+
+// Update the file input HTML
+// <input type="file" id="csvFileInput" accept=".csv" style="display: none" onchange="importFromCSV(this.files[0])">
 async function shareFile(type = 'all') {
     if (!currentSubject) {
         showError('יש לבחור מקצוע תחילה');
@@ -3422,8 +3769,14 @@ function toggleShareMenu() {
     menu.style.display = menu.style.display === 'block' ? 'none' : 'block';
 }
 function resetFileInput() {
-    const fileInput = document.getElementById('csvFileInput');
-    fileInput.value = ''; // Reset the file input
+    const fileInputs = [
+        document.getElementById('fileInput'),
+        document.getElementById('csvFileInput')
+    ];
+
+    fileInputs.forEach(input => {
+        if (input) input.value = '';
+    });
 }
 function generateExportData(type = 'all') {
     if (!currentSubject) {
@@ -3560,76 +3913,25 @@ async function getWeekLessons(weekDays) {
     }
     return lessons;
 }
-async function importFromCSV(file) {
-    if (!currentSubject) {
-        showError('יש לבחור מקצוע תחילה');
-        resetFileInput();
-        return;
-    }
+function updateExportMenu() {
+    const menu = document.getElementById('exportMenu');
+    menu.innerHTML = `
+        <a onclick="askExportFormat('planning')">ייצוא תכנון</a>
+        <a onclick="askExportFormat('schedule')">ייצוא לוז</a>
+        <a onclick="askExportFormat('all')">ייצוא הכל</a>
+    `;
+}
 
-    try {
-        currentSubject.topics = []; 
-        
-        const reader = new FileReader();
-        reader.onload = async function(event) {
-            const csv = event.target.result;
-            const rows = csv.split('\n')
-                .map(row => row.split(',')
-                .map(cell => cell.trim().replace(/^"|"$/g, '')))
-                .filter(row => row.length > 3);
+function askExportFormat(type) {
+    document.getElementById('exportMenu').style.display = 'none';
+    const format = prompt('בחר פורמט לייצוא (json/csv):', 'json').toLowerCase();
 
-            let currentTopic = null;
-
-            for (const row of rows) {
-                if (row.length < 4) continue;
-                
-                const [subject, topicTitle, subtopicTitle, lessonsStr, notes] = row;
-                if (!topicTitle.trim()) continue;
-
-                if (!currentTopic || currentTopic.title !== topicTitle) {
-                    currentTopic = {
-                        title: topicTitle,
-                        lessons: 0,
-                        subtopics: []
-                    };
-                    currentSubject.topics.push(currentTopic);
-                }
-
-                const subtopicLessons = parseInt(lessonsStr) || 1;
-                currentTopic.lessons += subtopicLessons;
-                currentTopic.subtopics.push({
-                    title: subtopicTitle.trim() || topicTitle.trim(),
-                    lessons: subtopicLessons,
-                    notes: notes || ''
-                });
-            }
-
-            await saveSubjectsToStorage();
-            
-            // החלפת הלשונית באופן ידני
-            document.querySelectorAll('.tab-button').forEach(button => {
-                button.classList.remove('active');
-            });
-            document.querySelectorAll('.tab-content').forEach(content => {
-                content.classList.remove('active');
-            });
-            
-            const planningTab = document.getElementById('planning-tab');
-            const planningButton = document.querySelector('[onclick="switchTab(event, \'planning-tab\')"]');
-            
-            planningTab.classList.add('active');
-            planningButton.classList.add('active');
-            
-            await loadSubjectData();
-            showError('הקובץ יובא בהצלחה');
-        };
-
-        reader.readAsText(file);
-    } catch (error) {
-        console.error('Error importing CSV:', error);
-        showError('שגיאה בייבוא הקובץ');
-    } finally {
-        resetFileInput();
+    if (format === 'json') {
+        exportToJSON(type);
+    } else if (format === 'csv') {
+        exportToCSV(type);
+    } else {
+        showError('פורמט לא נתמך');
     }
 }
 async function sendToWhatsApp(type = 'all') {
