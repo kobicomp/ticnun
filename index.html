@@ -4071,21 +4071,21 @@ async function generateSchoolYears() {
 }
 
 async function updateDates() {
-    const year = document.getElementById('schoolYear').value;
-    if (!year) return;
+   const year = document.getElementById('schoolYear').value;
+   if (!year) return;
 
-    const { start, end } = calculateSchoolYearDates(Number(year));
+   const { start, end } = calculateSchoolYearDates(Number(year));
 
-    document.getElementById('startDate').value = start;
-    document.getElementById('endDate').value = end;
+   document.getElementById('startDate').value = start;
+   document.getElementById('endDate').value = end;
 
-    if (currentSubject) {
-        currentSubject.startDate = start;
-        currentSubject.endDate = end;
-        saveSubjectsToStorage();
-    }
+   if (currentSubject) {
+       currentSubject.startDate = start;
+       currentSubject.endDate = end;
+       saveSubjectsToStorage();
+   }
 
-    generateTable();
+   generateTable();
 }
 function formatDate(date) {
     return date.toISOString().split('T')[0];
@@ -4093,9 +4093,6 @@ function formatDate(date) {
 function calculateSchoolYearDates(year) {
    const startDate = new Date(year, 8, 1);  // 1 בספטמבר
    const endDate = new Date(year + 1, 5, 30);  // 30 ביוני
-
-   // הוספת יום אחד כדי לכסות את כל התאריכים
-   endDate.setDate(endDate.getDate() + 1);
 
    return {
        start: formatDate(startDate),
