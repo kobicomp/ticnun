@@ -1353,28 +1353,28 @@ async function exportToJSON(type = 'all') {
 }
 async function listTemplatesFromGitHub() {
     const repoUrl = 'https://api.github.com/repos/kobicomp/ticnun/contents';
-    
+
     try {
         const response = await fetch(repoUrl);
         const files = await response.json();
-        
+
         const jsonTemplates = files
             .filter(file => file.name.endsWith('.json'))
             .map(file => file.name);
-        
+
         const select = document.createElement('select');
         select.id = 'templateSelector';
         select.onchange = () => importSpecificTemplate(select.value);
-        
+
         select.innerHTML = '<option value="">בחר תבנית</option>';
-        
+
         jsonTemplates.forEach(template => {
             const option = document.createElement('option');
             option.value = template;
             option.textContent = template;
             select.appendChild(option);
         });
-        
+
         document.body.appendChild(select);
     } catch (error) {
         console.error('Error listing templates:', error);
@@ -1386,7 +1386,7 @@ async function importSpecificTemplate(filename) {
     if (!filename) return;
 
     const fileUrl = `https://raw.githubusercontent.com/kobicomp/ticnun/main/${filename}`;
-    
+
     try {
         const response = await fetch(fileUrl);
         const data = await response.json();
@@ -1494,39 +1494,43 @@ async function importSpecificTemplate(filename) {
     }
 }
 async function populateTemplatesDropdown() {
-    const repoUrl = 'https://api.github.com/repos/kobicomp/ticnun/contents';
-    const select = document.getElementById('templateSelector');
-    
-    try {
-        const response = await fetch(repoUrl);
-        const files = await response.json();
-        
-        const jsonTemplates = files
-            .filter(file => file.name.endsWith('.json'))
-            .map(file => file.name);
-        
-        select.innerHTML = '<option value="">טען תוכניות מוכנות</option>';
-        
-        jsonTemplates.forEach(template => {
-            const option = document.createElement('option');
-            option.value = template;
-            option.textContent = template;
-            select.appendChild(option);
-        });
-        
-        select.onchange = () => importSpecificTemplate(select.value);
-    } catch (error) {
-        console.error('Error listing templates:', error);
-        showError('לא ניתן לטעון את רשימת התבניות');
-    }
+   const repoUrl = 'https://api.github.com/repos/kobicomp/ticnun/contents';
+   const select = document.getElementById('templateSelector');
+   
+   try {
+       const response = await fetch(repoUrl);
+       const files = await response.json();
+       
+       const jsonTemplates = files
+           .filter(file => file.name.endsWith('.json'))
+           .map(file => file.name.replace('.json', ''));
+       
+       select.innerHTML = '<option value="">טען תוכניות מוכנות</option>';
+       
+       jsonTemplates.forEach(template => {
+           const option = document.createElement('option');
+           option.value = template;
+           option.textContent = template;
+           select.appendChild(option);
+       });
+       
+       select.onchange = () => importSpecificTemplate(select.value + '.json');
+   } catch (error) {
+       console.error('Error listing templates:', error);
+       showError('לא ניתן לטעון את רשימת התבניות');
+   }
+}
+async function getHebrewSchoolYear(startDate) {
+    const hebrewDate = await getHebrewDate(startDate);
+    return hebrewDate ? `תשפ"${getHebrewYearLetter(hebrewDate.year)}` : null;
 }
 async function importTemplateFromGitHub() {
     const fileUrl = 'https://raw.githubusercontent.com/kobicomp/ticnun/main/%D7%AA%D7%95%D7%A8%D7%94%20%D7%94%D7%93%D7%A8%20%D7%9B%D7%94%D7%9F_planning_2025-01-25.json';
-    
+
     try {
         const response = await fetch(fileUrl);
         const jsonContent = await response.json();
-        
+
         await importFromJSON(new File([JSON.stringify(jsonContent)], 'template.json', { type: 'application/json' }));
     } catch (error) {
         console.error('Error importing file:', error);
@@ -4057,7 +4061,9 @@ async function updateDates() {
     const year = document.getElementById('schoolYear').value;
     if (!year) return;
 
-    const startDate = `${year}-09-01`;
+    const startDate = new Date(`${year}-09-01`);
+  const hebrewYear = await getHebrewYearForDate(startDate);
+  const yearLetter = getHebrewYearLetter(hebrewYear);
     const endDate = `${Number(year) + 1}-06-30`;
 
     document.getElementById('startDate').value = startDate;
