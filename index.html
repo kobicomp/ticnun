@@ -4091,8 +4091,18 @@ function formatDate(date) {
     return date.toISOString().split('T')[0];
 }
 function calculateSchoolYearDates(year) {
-   const startDate = new Date(year, 8, 1);  // 1 בספטמבר
-   const endDate = new Date(year + 1, 5, 30);  // 30 ביוני
+   let startDate = new Date(year, 7, 1);
+   let endDate = new Date(year + 1, 5, 30);
+
+   // תיקון לתחילת ספטמבר
+   if (startDate.getMonth() === 7) {
+       startDate.setDate(startDate.getDate() + 1);
+   }
+
+   // וידוא שסוף יוני הוא ה-30
+   if (endDate.getDate() === 1) {
+       endDate.setDate(0);
+   }
 
    return {
        start: formatDate(startDate),
