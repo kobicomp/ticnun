@@ -4061,26 +4061,30 @@ async function updateDates() {
     const year = document.getElementById('schoolYear').value;
     if (!year) return;
 
-    const startYear = Number(year);
-    const endYear = startYear + 1;
+    const { start, end } = calculateSchoolYearDates(Number(year));
 
-    const startDate = formatDate(new Date(startYear, 8, 1)); // 1 בספטמבר
-    const endDate = formatDate(new Date(endYear, 5, 30)); // 30 ביוני
-
-    document.getElementById('startDate').value = startDate;
-    document.getElementById('endDate').value = endDate;
+    document.getElementById('startDate').value = start;
+    document.getElementById('endDate').value = end;
 
     if (currentSubject) {
-        currentSubject.startDate = startDate;
-        currentSubject.endDate = endDate;
+        currentSubject.startDate = start;
+        currentSubject.endDate = end;
         saveSubjectsToStorage();
     }
 
     generateTable();
 }
-
 function formatDate(date) {
     return date.toISOString().split('T')[0];
+}
+function calculateSchoolYearDates(year) {
+    const startDate = new Date(year, 8, 1);  // 1 בספטמבר
+    const endDate = new Date(year + 1, 5, 30);  // 30 ביוני
+
+    return {
+        start: formatDate(startDate),
+        end: formatDate(endDate)
+    };
 }
 async function getWeekLessons(weekDays) {
     if (!currentSubject) return Array(6).fill(0);
