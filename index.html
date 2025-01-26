@@ -4044,7 +4044,8 @@ async function generateSchoolYears() {
    const currentYear = currentDate.getFullYear();
    const currentMonth = currentDate.getMonth() + 1;
 
-   const adjustedYear = currentMonth >= 7 ? currentYear + 1 : currentYear;
+   // התאמת השנה הנוכחית
+   const adjustedYear = currentMonth >= 7 ? currentYear : currentYear - 1;
 
    const years = [];
    const startYear = adjustedYear - 5;
