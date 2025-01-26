@@ -1160,7 +1160,7 @@ td.non-learning-day {
 <body>
    <div class="container">
        <h1>לוח שיעורים שנתי</h1>
-<select id="templateSelector"></select>
+
        <!-- בחירת מקצוע -->
 <div class="subjects-section">
   <div class="subject-controls">
@@ -1191,7 +1191,7 @@ td.non-learning-day {
       <!-- Import button -->
 <input type="file" id="fileInput" accept=".csv,.json" style="display: none" onchange="handleFileImport(this.files[0])">
 <button onclick="document.getElementById('fileInput').click()">ייבא קובץ</button>
-
+  <select id="templateSelector"></select>
       <!-- הוספת תפריט שיתוף חדש -->
       <div class="dropdown">
           <button onclick="toggleShareMenu()">שתף ⌄</button>
@@ -1203,7 +1203,7 @@ td.non-learning-day {
       </div>
 
       <!-- שאר הכפתורים -->
-    <button onclick="listTemplatesFromGitHub()">טעון תבניות</button>
+
       <div class="dropdown">
           <button onclick="togglePrintMenu()">הדפסה ⌄</button>
           <div id="printMenu" class="dropdown-content">
