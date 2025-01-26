@@ -1203,7 +1203,7 @@ td.non-learning-day {
       </div>
 
       <!-- שאר הכפתורים -->
-      <button onclick="importTemplateFromGitHub()">ייבא תבנית שיעור</button>
+    <button onclick="listTemplatesFromGitHub()">טעון תבניות</button>
       <div class="dropdown">
           <button onclick="togglePrintMenu()">הדפסה ⌄</button>
           <div id="printMenu" class="dropdown-content">
@@ -1349,6 +1349,148 @@ async function exportToJSON(type = 'all') {
     } catch (error) {
         console.error('Error exporting JSON:', error);
         showError('שגיאה בייצוא הקובץ');
+    }
+}
+async function listTemplatesFromGitHub() {
+    const repoUrl = 'https://api.github.com/repos/kobicomp/ticnun/contents';
+    
+    try {
+        const response = await fetch(repoUrl);
+        const files = await response.json();
+        
+        const jsonTemplates = files
+            .filter(file => file.name.endsWith('.json'))
+            .map(file => file.name);
+        
+        const select = document.createElement('select');
+        select.id = 'templateSelector';
+        select.onchange = () => importSpecificTemplate(select.value);
+        
+        select.innerHTML = '<option value="">בחר תבנית</option>';
+        
+        jsonTemplates.forEach(template => {
+            const option = document.createElement('option');
+            option.value = template;
+            option.textContent = template;
+            select.appendChild(option);
+        });
+        
+        document.body.appendChild(select);
+    } catch (error) {
+        console.error('Error listing templates:', error);
+        showError('לא ניתן לטעון את רשימת התבניות');
+    }
+}
+
+async function importSpecificTemplate(filename) {
+    if (!filename) return;
+
+    const fileUrl = `https://raw.githubusercontent.com/kobicomp/ticnun/main/${filename}`;
+    
+    try {
+        const response = await fetch(fileUrl);
+        const data = await response.json();
+
+        const importType = await new Promise(resolve => {
+            if (confirm('האם לייבא למקצוע חדש? לחץ "אישור" לחדש או "ביטול" למקצוע קיים')) {
+                const name = prompt('הכנס שם למקצוע החדש:', data.metadata?.subjectName || filename);
+                if (!name) {
+                    resolve(null);
+                    return;
+                }
+                if (subjects.has(name)) {
+                    showError('מקצוע זה כבר קיים');
+                    resolve(null);
+                    return;
+                }
+                resolve({ type: 'new', name });
+            } else {
+                if (subjects.size === 0) {
+                    showError('אין מקצועות קיימים');
+                    resolve(null);
+                    return;
+                }
+
+                const subjectsList = Array.from(subjects.keys());
+                const selectHtml = subjectsList.map((subject, i) => `${i + 1}. ${subject}`).join('\n');
+                const selectedIndex = prompt(`בחר מקצוע:\n\n${selectHtml}`);
+
+                if (!selectedIndex) {
+                    resolve(null);
+                    return;
+                }
+
+                const selectedSubject = subjectsList[parseInt(selectedIndex) - 1];
+                if (!selectedSubject) {
+                    showError('בחירה לא תקינה');
+                    resolve(null);
+                    return;
+                }
+
+                resolve({ type: 'existing', name: selectedSubject });
+            }
+        });
+
+        if (!importType) return;
+
+        let targetSubject;
+        if (importType.type === 'new') {
+            targetSubject = {
+                name: importType.name,
+                lessonsPerDay: [0,0,0,0,0,0],
+                topics: [],
+                startDate: document.getElementById('startDate').value,
+                endDate: document.getElementById('endDate').value,
+                lastUpdate: new Date().toISOString(),
+                lessonChanges: {
+                    cancelledLessons: [],
+                    cancelledDays: [],
+                    added: []
+                }
+            };
+        } else {
+            const existingSubject = subjects.get(importType.name);
+            targetSubject = {
+                ...existingSubject,
+                topics: [],
+                lastUpdate: new Date().toISOString()
+            };
+        }
+
+        // טעינת נושאים מהקובץ
+        if (data.planning && data.planning.topics) {
+            targetSubject.topics = data.planning.topics.map(topic => ({
+                title: topic.title || '',
+                lessons: topic.subtopics.reduce((sum, sub) => sum + (sub.lessons || 0), 0),
+                subtopics: topic.subtopics.map(subtopic => ({
+                    title: subtopic.title || '',
+                    lessons: subtopic.lessons || 0,
+                    notes: subtopic.notes || ''
+                }))
+            }));
+        }
+
+        // עדכון שורות זמנים אם קיימות
+        if (data.schedule) {
+            if (data.schedule.startDate) targetSubject.startDate = data.schedule.startDate;
+            if (data.schedule.endDate) targetSubject.endDate = data.schedule.endDate;
+            if (data.schedule.lessonsPerDay) targetSubject.lessonsPerDay = data.schedule.lessonsPerDay;
+        }
+
+        subjects.set(targetSubject.name, targetSubject);
+        saveSubjectsToStorage();
+        updateSubjectSelect();
+
+        document.getElementById('subjectSelect').value = targetSubject.name;
+        currentSubject = targetSubject;
+        await loadSubjectData();
+        await generateTable();
+
+        showError('הנתונים יובאו בהצלחה');
+
+    } catch (error) {
+        console.error('Error importing template:', error);
+        showError('לא ניתן לייבא את התבנית');
     }
 }
 async function importTemplateFromGitHub() {
