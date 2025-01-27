@@ -2431,24 +2431,29 @@ function updateLessonDisplay(cell) {
 
 function addLesson(cell) {
     if (!currentSubject || cell.classList.contains('non-learning-day')) return;
-
     const row = cell.closest('tr');
     const date = row.querySelector('.gregorian-date')?.textContent;
     const dayIndex = Array.from(row.children).indexOf(cell) - 2;
-
     if (!confirm('להוסיף שיעור ליום זה?')) return;
-
     initLessonChanges();
 
     if (cell.classList.contains('cancelled-day')) {
         cell.classList.remove('cancelled-day');
-        cell.classList.add('cancelled-day-with-lesson');
+        const cancelledDayIndex = currentSubject.lessonChanges.cancelledDays.findIndex(d => 
+            d.date === date && d.dayIndex === dayIndex);
+        if (cancelledDayIndex > -1) {
+            currentSubject.lessonChanges.cancelledDays.splice(cancelledDayIndex, 1);
+        }
     }
 
     const futureLessons = collectFutureLessons(date, dayIndex);
     shiftLessonsForward(futureLessons);
     updateLessonCount(cell);
     addNewLessonToCell(cell);
+
+    if (!currentSubject.lessonChanges.added.some(a => a.date === date && a.dayIndex === dayIndex)) {
+        currentSubject.lessonChanges.added.push({ date, dayIndex });
+    }
 
     saveSubjectsToStorage();
     validateAndPlan();
