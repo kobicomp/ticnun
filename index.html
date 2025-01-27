@@ -1496,24 +1496,24 @@ async function importSpecificTemplate(filename) {
 async function populateTemplatesDropdown() {
    const repoUrl = 'https://api.github.com/repos/kobicomp/ticnun/contents';
    const select = document.getElementById('templateSelector');
-   
+
    try {
        const response = await fetch(repoUrl);
        const files = await response.json();
-       
+
        const jsonTemplates = files
            .filter(file => file.name.endsWith('.json'))
            .map(file => file.name.replace('.json', ''));
-       
+
        select.innerHTML = '<option value="">טען תוכניות מוכנות</option>';
-       
+
        jsonTemplates.forEach(template => {
            const option = document.createElement('option');
            option.value = template;
            option.textContent = template;
            select.appendChild(option);
        });
-       
+
        select.onchange = () => importSpecificTemplate(select.value + '.json');
    } catch (error) {
        console.error('Error listing templates:', error);
@@ -2428,109 +2428,119 @@ function updateLessonDisplay(cell) {
 }
 
 // פונקציה חדשה להוספת שיעור
+
 function addLesson(cell) {
-    if (!currentSubject || cell.classList.contains('non-learning-day')) {
-        showError('לא ניתן להוסיף שיעור');
-        return;
-    }
+    if (!currentSubject || cell.classList.contains('non-learning-day')) return;
 
     const row = cell.closest('tr');
-    const dateCell = row.querySelector('.gregorian-date');
-    const date = dateCell?.textContent;
+    const date = row.querySelector('.gregorian-date')?.textContent;
     const dayIndex = Array.from(row.children).indexOf(cell) - 2;
 
-    if (!confirm('האם להוסיף שיעור ליום זה?')) return;
+    if (!confirm('להוסיף שיעור ליום זה?')) return;
 
     initLessonChanges();
 
-    // שינוי סטטוס ליום מבוטל עם שיעור נוסף
     if (cell.classList.contains('cancelled-day')) {
         cell.classList.remove('cancelled-day');
         cell.classList.add('cancelled-day-with-lesson');
     }
 
-    // איסוף שיעורים עתידיים
+    const futureLessons = collectFutureLessons(date, dayIndex);
+    shiftLessonsForward(futureLessons);
+    updateLessonCount(cell);
+    addNewLessonToCell(cell);
+
+    saveSubjectsToStorage();
+    validateAndPlan();
+}
+function collectFutureLessons(startDate, startDayIndex) {
     const futureLessons = [];
     let foundCurrent = false;
 
-    document.querySelectorAll('.main-table tbody tr').forEach(tableRow => {
-        const rowDate = tableRow.querySelector('.gregorian-date')?.textContent;
+    document.querySelectorAll('.main-table tbody tr').forEach(row => {
+        const rowDate = row.querySelector('.gregorian-date')?.textContent;
         if (!rowDate) return;
 
-        const currentRowIsAfter = parseDate(rowDate) >= parseDate(date);
+        const currentRowIsAfter = new Date(rowDate) >= new Date(startDate);
 
-        tableRow.querySelectorAll('td').forEach((tableCell, index) => {
+        row.querySelectorAll('td').forEach((cell, index) => {
             if (index < 2 || index > 7) return;
-            if (!tableCell.classList.contains('learning-day')) return;
+            if (!cell.classList.contains('learning-day')) return;
 
             const cellDayIndex = index - 2;
 
-            if (currentRowIsAfter &&
-                (foundCurrent ||
-                (rowDate === date && cellDayIndex >= dayIndex))) {
-
+            if (currentRowIsAfter && (foundCurrent || (rowDate === startDate && cellDayIndex >= startDayIndex))) {
                 foundCurrent = true;
-                const lessons = tableCell.querySelectorAll('.lesson-cell:not(.cancelled-lesson)');
+                const lessons = cell.querySelectorAll('.lesson-cell:not(.cancelled-lesson)');
                 lessons.forEach(lesson => {
                     futureLessons.push({
                         topic: lesson.querySelector('.lesson-topic')?.textContent || '',
                         subtopic: lesson.querySelector('.lesson-subtopic')?.textContent || '',
-                        cell: tableCell
+                        cell: cell
                     });
                 });
             }
         });
     });
 
-    // עדכון השיעורים - כל שיעור מקבל את התוכן של השיעור הבא
-    if (futureLessons.length > 0) {
-        for (let i = 0; i < futureLessons.length - 1; i++) {
-            const currentLesson = futureLessons[i];
-            const nextLesson = futureLessons[i + 1];
-
-            const lessonElement = currentLesson.cell.querySelector('.lesson-cell');
-            if (lessonElement) {
-                lessonElement.querySelector('.lesson-topic').textContent = nextLesson.topic;
-                lessonElement.querySelector('.lesson-subtopic').textContent = nextLesson.subtopic;
-            }
-        }
-
-        // ביטול השיעור האחרון
-        const lastLesson = futureLessons[futureLessons.length - 1];
-        if (lastLesson && lastLesson.cell) {
-            lastLesson.cell.querySelector('.lesson-cell')?.remove();
-        }
-    }
-
-    // הוספת השיעור החדש
-    if (!currentSubject.lessonChanges.added.some(a =>
-        a.date === date && a.dayIndex === dayIndex
-    )) {
-        currentSubject.lessonChanges.added.push({ date, dayIndex });
-
-        const currentLessons = parseInt(cell.dataset.lessons) || 0;
-        cell.dataset.lessons = (currentLessons + 1).toString();
-        cell.dataset.original_lessons = cell.dataset.lessons;
-
-        // הוספת מיכל לשיעורים אם לא קיים
-        if (!cell.querySelector('.lessons-container')) {
-            const container = document.createElement('div');
-            container.className = 'lessons-container';
-            cell.appendChild(container);
-        }
-
-        // אם זה יום פוטנציאלי, נהפוך אותו ליום לימודים
-        if (cell.classList.contains('potential-learning-day')) {
-            cell.classList.remove('potential-learning-day');
-            cell.classList.add('learning-day');
-        }
-    }
-
-    saveSubjectsToStorage();
-    validateAndPlan();
+    return futureLessons;
 }
-// עדכון generateTable - הוספת כפתורי פעולה
-// בתוך הלולאה שיוצרת את התאים ב-generateTable, עדכן את יצירת התא כך:
+function shiftLessonsForward(lessons) {
+    for (let i = 0; i < lessons.length - 1; i++) {
+        const currentLesson = lessons[i];
+        const nextLesson = lessons[i + 1];
+
+        updateLessonContent(currentLesson.cell, nextLesson.topic, nextLesson.subtopic);
+    }
+
+    if (lessons.length > 0) {
+        const lastLesson = lessons[lessons.length - 1];
+        removeLessonFromCell(lastLesson.cell);
+    }
+}
+function updateLessonContent(cell, topic, subtopic) {
+    const lessonElement = cell.querySelector('.lesson-cell');
+    if (lessonElement) {
+        lessonElement.querySelector('.lesson-topic').textContent = topic;
+        lessonElement.querySelector('.lesson-subtopic').textContent = subtopic;
+    }
+}
+function removeLessonFromCell(cell) {
+    const lessonElement = cell.querySelector('.lesson-cell:last-child');
+    if (lessonElement) lessonElement.remove();
+
+    const currentLessons = parseInt(cell.dataset.lessons) || 0;
+    if (currentLessons > 0) {
+        cell.dataset.lessons = (currentLessons - 1).toString();
+    }
+}
+function updateLessonCount(cell) {
+    const currentLessons = parseInt(cell.dataset.lessons) || 0;
+    cell.dataset.lessons = (currentLessons + 1).toString();
+    cell.dataset.original_lessons = cell.dataset.lessons;
+}
+function addNewLessonToCell(cell) {
+    const container = cell.querySelector('.lessons-container') || createLessonsContainer(cell);
+    const newLesson = document.createElement('div');
+    newLesson.className = 'lesson-cell';
+    newLesson.innerHTML = `
+        <button class="cancel-lesson-btn" onclick="cancelLesson(this.closest('td'), this.closest('.lesson-cell'))">⊖</button>
+        <div class="lesson-topic"></div>
+        <div class="lesson-subtopic"></div>
+    `;
+    container.appendChild(newLesson);
+
+    if (cell.classList.contains('potential-learning-day')) {
+        cell.classList.remove('potential-learning-day');
+        cell.classList.add('learning-day');
+    }
+}
+function createLessonsContainer(cell) {
+    const container = document.createElement('div');
+    container.className = 'lessons-container';
+    cell.appendChild(container);
+    return container;
+}
 function createTableCell(lessons) {
     return `
         <td class="${lessons > 0 ? 'learning-day' : 'non-learning-day'}"
