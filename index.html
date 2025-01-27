@@ -2437,21 +2437,10 @@ function addLesson(cell) {
     if (!confirm('להוסיף שיעור ליום זה?')) return;
     initLessonChanges();
 
-    if (cell.classList.contains('cancelled-day')) {
-        cell.classList.remove('cancelled-day');
-        const cancelledDayIndex = currentSubject.lessonChanges.cancelledDays.findIndex(d => 
-            d.date === date && d.dayIndex === dayIndex);
-        if (cancelledDayIndex > -1) {
-            currentSubject.lessonChanges.cancelledDays.splice(cancelledDayIndex, 1);
-        }
-    }
-
     const futureLessons = collectFutureLessons(date, dayIndex);
-    const newLessonContent = futureLessons.length > 0 ? futureLessons[0] : { topic: "נושא חדש", subtopic: "תת-נושא חדש" };
-    addNewLessonToCell(cell, newLessonContent);
     shiftLessonsForward(futureLessons);
-
     updateLessonCount(cell);
+    addNewLessonToCell(cell);
 
     if (!currentSubject.lessonChanges.added.some(a => a.date === date && a.dayIndex === dayIndex)) {
         currentSubject.lessonChanges.added.push({ date, dayIndex });
@@ -2527,16 +2516,16 @@ function updateLessonCount(cell) {
     cell.dataset.lessons = (currentLessons + 1).toString();
     cell.dataset.original_lessons = cell.dataset.lessons;
 }
-function addNewLessonToCell(cell, content) {
+function addNewLessonToCell(cell) {
     const container = cell.querySelector('.lessons-container') || createLessonsContainer(cell);
     const newLesson = document.createElement('div');
     newLesson.className = 'lesson-cell';
     newLesson.innerHTML = `
         <button class="cancel-lesson-btn" onclick="cancelLesson(this.closest('td'), this.closest('.lesson-cell'))">⊖</button>
-        <div class="lesson-topic">${content.topic}</div>
-        <div class="lesson-subtopic">${content.subtopic}</div>
+        <div class="lesson-topic"></div>
+        <div class="lesson-subtopic"></div>
     `;
-    container.insertBefore(newLesson, container.firstChild);
+    container.appendChild(newLesson);
 
     if (cell.classList.contains('potential-learning-day')) {
         cell.classList.remove('potential-learning-day');
