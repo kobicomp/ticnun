@@ -2530,8 +2530,8 @@ function addNewLessonToCell(cell) {
     newLesson.className = 'lesson-cell';
     newLesson.innerHTML = `
         <button class="cancel-lesson-btn" onclick="cancelLesson(this.closest('td'), this.closest('.lesson-cell'))">⊖</button>
-        <div class="lesson-topic"></div>
-        <div class="lesson-subtopic"></div>
+        <div class="lesson-topic">נושא חדש</div>
+        <div class="lesson-subtopic">תת-נושא חדש</div>
     `;
     container.appendChild(newLesson);
 
