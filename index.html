@@ -2437,6 +2437,16 @@ function addLesson(cell) {
     if (!confirm('להוסיף שיעור ליום זה?')) return;
     initLessonChanges();
 
+    if (cell.classList.contains('cancelled-day')) {
+        cell.classList.remove('cancelled-day');
+        const cancelledDayIndex = currentSubject.lessonChanges.cancelledDays.findIndex(d => 
+            d.date === date && d.dayIndex === dayIndex);
+        if (cancelledDayIndex > -1) {
+            currentSubject.lessonChanges.cancelledDays.splice(cancelledDayIndex, 1);
+        }
+        cell.dataset.lessons = "1";
+    }
+
     const futureLessons = collectFutureLessons(date, dayIndex);
     shiftLessonsForward(futureLessons);
     updateLessonCount(cell);
@@ -2447,7 +2457,7 @@ function addLesson(cell) {
     }
 
     saveSubjectsToStorage();
-   planLessons();
+    planLessons();
 }
 
 function collectFutureLessons(startDate, startDayIndex) {
