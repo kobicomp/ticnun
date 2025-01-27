@@ -2444,12 +2444,9 @@ function addLesson(cell) {
         if (cancelledDayIndex > -1) {
             currentSubject.lessonChanges.cancelledDays.splice(cancelledDayIndex, 1);
         }
-        const originalLessons = parseInt(cell.dataset.original_lessons) || 0;
-        cell.dataset.lessons = originalLessons > 1 ? "1" : originalLessons.toString();
-        if (originalLessons > 1) {
-            const futureLessons = collectFutureLessons(date, dayIndex);
-            shiftLessonsForward(futureLessons.slice(1));
-        }
+        cell.dataset.lessons = "1";
+        const futureLessons = collectFutureLessons(date, dayIndex);
+        shiftLessonsForward(futureLessons);
     } else {
         const futureLessons = collectFutureLessons(date, dayIndex);
         shiftLessonsForward(futureLessons);
