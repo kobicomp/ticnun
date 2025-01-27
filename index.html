@@ -1244,6 +1244,15 @@ td.non-learning-day {
                        <label>עד תאריך:</label>
                        <input type="date" id="endDate" onchange="handleDateChange()">
                    </div>
+                   <div id="viewControls">
+  <button onclick="changeView('day')">Day</button>
+  <button onclick="changeView('week')">Week</button>
+  <button onclick="changeView('month')">Month</button>
+  <button onclick="changeView('all')">All</button>
+  <input type="date" id="startDate" onchange="updateCustomView()">
+  <input type="date" id="endDate" onchange="updateCustomView()">
+  <button onclick="changeView('custom')">Custom</button>
+</div>
                </div>
                <div id="tableContainer"></div>
                <div id="totalDays" class="total-days"></div>
@@ -1809,7 +1818,13 @@ function toggleWhatsAppMenu() {
     // הצגת/הסתרת תפריט ווטסאפ
     menu.style.display = menu.style.display === 'block' ? 'none' : 'block';
 }
-
+function updateCustomView() {
+  const startDate = document.getElementById('startDate').value;
+  const endDate = document.getElementById('endDate').value;
+  if (startDate && endDate) {
+    changeView('custom', startDate, endDate);
+  }
+}
 async function sendToWhatsApp(type) {
     if (!currentSubject) {
         showError('יש לבחור מקצוע תחילה');
@@ -2439,7 +2454,7 @@ function addLesson(cell) {
 
     if (cell.classList.contains('cancelled-day')) {
         cell.classList.remove('cancelled-day');
-        const cancelledDayIndex = currentSubject.lessonChanges.cancelledDays.findIndex(d => 
+        const cancelledDayIndex = currentSubject.lessonChanges.cancelledDays.findIndex(d =>
             d.date === date && d.dayIndex === dayIndex);
         if (cancelledDayIndex > -1) {
             currentSubject.lessonChanges.cancelledDays.splice(cancelledDayIndex, 1);
@@ -4038,6 +4053,113 @@ function askForNewSubjectName() {
             resolve(name);
         }
     });
+}
+function filterLessonData(mode, startDate, endDate) {
+  return currentSubject.topics.flatMap(topic => 
+    topic.subtopics.map(subtopic => ({
+      date: new Date(subtopic.date),
+      topic: topic.title,
+      subtopic: subtopic.title,
+      lessons: subtopic.lessons
+    }))
+  ).filter(lesson => 
+    lesson.date >= new Date(startDate) && 
+    lesson.date <= new Date(endDate)
+  );
+}
+
+function displayDayView(data) {
+  const table = document.createElement('table');
+  table.innerHTML = `
+    <tr><th>Time</th><th>Topic</th><th>Subtopic</th></tr>
+    ${data.map(lesson => `
+      <tr>
+        <td>${lesson.date.toLocaleTimeString()}</td>
+        <td>${lesson.topic}</td>
+        <td>${lesson.subtopic}</td>
+      </tr>
+    `).join('')}
+  `;
+  document.getElementById('tableContainer').innerHTML = '';
+  document.getElementById('tableContainer').appendChild(table);
+}
+
+function displayWeekView(data) {
+  const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+  const table = document.createElement('table');
+  table.innerHTML = `
+    <tr>${days.map(day => `<th>${day}</th>`).join('')}</tr>
+    ${Array(6).fill().map((_, hour) => `
+      <tr>
+        ${days.map(day => `
+          <td>
+            ${data.filter(lesson => 
+              lesson.date.getDay() === days.indexOf(day) && 
+              lesson.date.getHours() === hour + 8
+            ).map(lesson => `
+              <div>${lesson.topic}: ${lesson.subtopic}</div>
+            `).join('')}
+          </td>
+        `).join('')}
+      </tr>
+    `).join('')}
+  `;
+  document.getElementById('tableContainer').innerHTML = '';
+  document.getElementById('tableContainer').appendChild(table);
+}
+
+function displayMonthView(data) {
+  const firstDay = new Date(data[0].date.getFullYear(), data[0].date.getMonth(), 1);
+  const lastDay = new Date(data[0].date.getFullYear(), data[0].date.getMonth() + 1, 0);
+  const days = Array(lastDay.getDate()).fill().map((_, i) => i + 1);
+  
+  const table = document.createElement('table');
+  table.innerHTML = `
+    <tr>${['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map(day => `<th>${day}</th>`).join('')}</tr>
+    ${Array(Math.ceil(days.length / 7)).fill().map((_, weekIndex) => `
+      <tr>
+        ${Array(7).fill().map((_, dayIndex) => {
+          const day = weekIndex * 7 + dayIndex - firstDay.getDay() + 1;
+          const dayLessons = data.filter(lesson => lesson.date.getDate() === day);
+          return day > 0 && day <= days.length ? `
+            <td>
+              ${day}
+              ${dayLessons.map(lesson => `<div>${lesson.topic}</div>`).join('')}
+            </td>
+          ` : '<td></td>';
+        }).join('')}
+      </tr>
+    `).join('')}
+  `;
+  document.getElementById('tableContainer').innerHTML = '';
+  document.getElementById('tableContainer').appendChild(table);
+}
+
+function displayAllView(data) {
+  const table = document.createElement('table');
+  table.innerHTML = `
+    <tr><th>Date</th><th>Topic</th><th>Subtopic</th><th>Number of Lessons</th></tr>
+    ${data.map(lesson => `
+      <tr>
+        <td>${lesson.date.toLocaleDateString()}</td>
+        <td>${lesson.topic}</td>
+        <td>${lesson.subtopic}</td>
+        <td>${lesson.lessons}</td>
+      </tr>
+    `).join('')}
+  `;
+  document.getElementById('tableContainer').innerHTML = '';
+  document.getElementById('tableContainer').appendChild(table);
+}
+
+function changeView(mode, startDate, endDate) {
+  const data = filterLessonData(mode, startDate, endDate);
+  switch(mode) {
+    case 'day': displayDayView(data); break;
+    case 'week': displayWeekView(data); break;
+    case 'month': displayMonthView(data); break;
+    case 'all': displayAllView(data); break;
+  }
 }
 function askForImportType() {
     return new Promise(resolve => {
