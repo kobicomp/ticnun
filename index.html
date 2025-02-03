@@ -1179,15 +1179,14 @@ td.non-learning-day {
               <a onclick="sendToWhatsApp('all')">שלח הכל</a>
           </div>
       </div>
-      <!-- תפריט ייצוא -->
       <div class="dropdown">
-          <button onclick="toggleExportMenu()">ייצוא ⌄</button>
-          <div id="exportMenu" class="dropdown-content">
-              <a onclick="askExportFormat('planning')">ייצוא תכנון</a>
-              <a onclick="askExportFormat('schedule')">ייצוא לוז</a>
-              <a onclick="askExportFormat('all')">ייצוא הכל</a>
-          </div>
+      <button onclick="toggleExportMenu()">ייצוא ⌄</button>
+      <div id="exportMenu" class="dropdown-content">
+          <a onclick="askExportFormat('planning')">ייצוא תכנון</a>
+          <a onclick="askExportFormat('schedule')">ייצוא לוז</a>
+          <a onclick="askExportFormat('all')">ייצוא הכל</a>
       </div>
+  </div>
       <!-- Import button -->
 <input type="file" id="fileInput" accept=".csv,.json" style="display: none" onchange="handleFileImport(this.files[0])">
 <button onclick="document.getElementById('fileInput').click()">ייבא קובץ</button>
@@ -3267,7 +3266,29 @@ async function getHebrewDate(date) {
         return null;
     }
 }
+function toggleExportMenu() {
+    const menu = document.getElementById('exportMenu');
+    // סגירת תפריטים אחרים
+    document.getElementById('printMenu')?.style.display = 'none';
+    document.getElementById('shareMenu')?.style.display = 'none';
+    document.getElementById('whatsappMenu')?.style.display = 'none';
+    
+    // הצגת/הסתרת תפריט ייצוא
+    menu.style.display = menu.style.display === 'block' ? 'none' : 'block';
+}
 
+function askExportFormat(type) {
+    document.getElementById('exportMenu').style.display = 'none';
+    const format = prompt('בחר פורמט לייצוא (json/csv):', 'json').toLowerCase();
+    
+    if (format === 'json') {
+        exportToJSON(type);
+    } else if (format === 'csv') {
+        exportToCSV(type);
+    } else {
+        showError('פורמט לא נתמך');
+    }
+}
 async function getHebrewYearForDate(date) {
     const hebrewDate = await getHebrewDate(date);
     return hebrewDate ? hebrewDate.year : null;
@@ -4187,6 +4208,16 @@ async function sendToWhatsApp(type = 'all') {
         console.error('Error sharing:', error);
         showError('שגיאה בשיתוף הקובץ');
     }
+}
+function toggleExportMenu() {
+    const menu = document.getElementById('exportMenu');
+    // סגירת תפריטים אחרים אם יש
+    document.getElementById('printMenu')?.style.display = 'none';
+    document.getElementById('shareMenu')?.style.display = 'none';
+    document.getElementById('whatsappMenu')?.style.display = 'none';
+    
+    // הצגת/הסתרת תפריט ייצוא
+    menu.style.display = menu.style.display === 'block' ? 'none' : 'block';
 }
         function fallbackShare() {
           // המרת המספר לפורמט בינלאומי
