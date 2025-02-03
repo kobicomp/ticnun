@@ -1179,14 +1179,15 @@ td.non-learning-day {
               <a onclick="sendToWhatsApp('all')">שלח הכל</a>
           </div>
       </div>
+      <!-- תפריט ייצוא -->
       <div class="dropdown">
-      <button onclick="toggleExportMenu()">ייצוא ⌄</button>
-      <div id="exportMenu" class="dropdown-content">
-          <a onclick="askExportFormat('planning')">ייצוא תכנון</a>
-          <a onclick="askExportFormat('schedule')">ייצוא לוז</a>
-          <a onclick="askExportFormat('all')">ייצוא הכל</a>
+          <button onclick="toggleExportMenu()">ייצוא ⌄</button>
+          <div id="exportMenu" class="dropdown-content">
+              <a onclick="askExportFormat('planning')">ייצוא תכנון</a>
+              <a onclick="askExportFormat('schedule')">ייצוא לוז</a>
+              <a onclick="askExportFormat('all')">ייצוא הכל</a>
+          </div>
       </div>
-  </div>
       <!-- Import button -->
 <input type="file" id="fileInput" accept=".csv,.json" style="display: none" onchange="handleFileImport(this.files[0])">
 <button onclick="document.getElementById('fileInput').click()">ייבא קובץ</button>
@@ -3266,29 +3267,7 @@ async function getHebrewDate(date) {
         return null;
     }
 }
-function toggleExportMenu() {
-    const menu = document.getElementById('exportMenu');
-    // סגירת תפריטים אחרים
-    document.getElementById('printMenu')?.style.display = 'none';
-    document.getElementById('shareMenu')?.style.display = 'none';
-    document.getElementById('whatsappMenu')?.style.display = 'none';
-    
-    // הצגת/הסתרת תפריט ייצוא
-    menu.style.display = menu.style.display === 'block' ? 'none' : 'block';
-}
 
-function askExportFormat(type) {
-    document.getElementById('exportMenu').style.display = 'none';
-    const format = prompt('בחר פורמט לייצוא (json/csv):', 'json').toLowerCase();
-    
-    if (format === 'json') {
-        exportToJSON(type);
-    } else if (format === 'csv') {
-        exportToCSV(type);
-    } else {
-        showError('פורמט לא נתמך');
-    }
-}
 async function getHebrewYearForDate(date) {
     const hebrewDate = await getHebrewDate(date);
     return hebrewDate ? hebrewDate.year : null;
@@ -3947,7 +3926,7 @@ async function shareFile(type = 'all') {
     }
 
     try {
-        const data = await exportToCSV(type);
+        const data = generateExportData(type);
         const blob = new Blob(['\ufeff' + data], { type: 'text/csv;charset=utf-8;' });
         const file = new File([blob], `${currentSubject.name}_${type}.csv`, { type: 'text/csv' });
 
@@ -3958,6 +3937,7 @@ async function shareFile(type = 'all') {
                 text: 'קובץ תכנון לימודים'
             });
         } else {
+            // נפעיל את הייצוא הרגיל אם השיתוף לא נתמך
             const link = document.createElement('a');
             link.href = URL.createObjectURL(blob);
             link.download = `${currentSubject.name}_${type}.csv`;
@@ -4174,51 +4154,59 @@ async function sendToWhatsApp(type = 'all') {
         return;
     }
 
+    // בקשת מספר טלפון
     let phoneNumber = prompt('הכנס מספר טלפון לשליחה (לדוגמה: 0501234567):');
     if (!phoneNumber) return;
 
+    // ניקוי המספר מתווים מיוחדים
     phoneNumber = phoneNumber.replace(/[^0-9]/g, '');
+
+    // בדיקת תקינות המספר
     if (phoneNumber.length !== 10 || !phoneNumber.startsWith('05')) {
         showError('מספר טלפון לא תקין');
         return;
     }
 
     try {
-        const data = await exportToCSV(type);
+        // יצירת הקובץ
+        const data = generateExportData(type);
         const blob = new Blob(['\ufeff' + data], { type: 'text/csv;charset=utf-8;' });
         const file = new File([blob], `${currentSubject.name}_${type}.csv`, { type: 'text/csv' });
 
-        const whatsappNumber = '972' + phoneNumber.substring(1);
+        // יצירת הודעה
         let message = `קובץ תכנון למקצוע ${currentSubject.name}`;
+        if (type === 'planning') {
+            message = `תכנון למקצוע ${currentSubject.name}`;
+        } else if (type === 'schedule') {
+            message = `לוז למקצוע ${currentSubject.name}`;
+        }
 
-        // הורדת הקובץ
-        const link = document.createElement('a');
-        link.href = URL.createObjectURL(blob);
-        link.download = `${currentSubject.name}_${type}.csv`;
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-        URL.revokeObjectURL(link.href);
+        // הוספת תאריכים
+        const startDate = document.getElementById('startDate').value;
+        const endDate = document.getElementById('endDate').value;
+        if (startDate && endDate) {
+            const formattedStartDate = new Date(startDate).toLocaleDateString('he-IL');
+            const formattedEndDate = new Date(endDate).toLocaleDateString('he-IL');
+            message += ` לתקופה ${formattedStartDate} - ${formattedEndDate}`;
+        }
 
-        // פתיחת ווטסאפ
-        window.open(`https://wa.me/${whatsappNumber}?text=${encodeURIComponent(message)}`, '_blank');
-        showError('הקובץ הורד. אנא שלח אותו בצ׳אט הווטסאפ שנפתח');
+        if (navigator.canShare && navigator.canShare({ files: [file] })) {
+            // שימוש ב Web Share API כשאפשר
+            const shareData = {
+                files: [file],
+                title: message,
+                text: message
+            };
 
-    } catch (error) {
-        console.error('Error sharing:', error);
-        showError('שגיאה בשיתוף הקובץ');
-    }
-}
-function toggleExportMenu() {
-    const menu = document.getElementById('exportMenu');
-    // סגירת תפריטים אחרים אם יש
-    document.getElementById('printMenu')?.style.display = 'none';
-    document.getElementById('shareMenu')?.style.display = 'none';
-    document.getElementById('whatsappMenu')?.style.display = 'none';
-    
-    // הצגת/הסתרת תפריט ייצוא
-    menu.style.display = menu.style.display === 'block' ? 'none' : 'block';
-}
+            try {
+                await navigator.share(shareData);
+            } catch (err) {
+                // אם השיתוף נכשל, נחזור לדרך הרגילה
+                fallbackShare();
+            }
+        } else {
+            fallbackShare();
+        }
         function fallbackShare() {
           // המרת המספר לפורמט בינלאומי
           const whatsappNumber = '972' + phoneNumber.substring(1);
