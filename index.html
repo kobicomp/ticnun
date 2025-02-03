@@ -3926,7 +3926,7 @@ async function shareFile(type = 'all') {
     }
 
     try {
-        const data = generateExportData(type);
+        const data = await exportToCSV(type);
         const blob = new Blob(['\ufeff' + data], { type: 'text/csv;charset=utf-8;' });
         const file = new File([blob], `${currentSubject.name}_${type}.csv`, { type: 'text/csv' });
 
@@ -3937,7 +3937,6 @@ async function shareFile(type = 'all') {
                 text: 'קובץ תכנון לימודים'
             });
         } else {
-            // נפעיל את הייצוא הרגיל אם השיתוף לא נתמך
             const link = document.createElement('a');
             link.href = URL.createObjectURL(blob);
             link.download = `${currentSubject.name}_${type}.csv`;
@@ -4154,59 +4153,41 @@ async function sendToWhatsApp(type = 'all') {
         return;
     }
 
-    // בקשת מספר טלפון
     let phoneNumber = prompt('הכנס מספר טלפון לשליחה (לדוגמה: 0501234567):');
     if (!phoneNumber) return;
 
-    // ניקוי המספר מתווים מיוחדים
     phoneNumber = phoneNumber.replace(/[^0-9]/g, '');
-
-    // בדיקת תקינות המספר
     if (phoneNumber.length !== 10 || !phoneNumber.startsWith('05')) {
         showError('מספר טלפון לא תקין');
         return;
     }
 
     try {
-        // יצירת הקובץ
-        const data = generateExportData(type);
+        const data = await exportToCSV(type);
         const blob = new Blob(['\ufeff' + data], { type: 'text/csv;charset=utf-8;' });
         const file = new File([blob], `${currentSubject.name}_${type}.csv`, { type: 'text/csv' });
 
-        // יצירת הודעה
+        const whatsappNumber = '972' + phoneNumber.substring(1);
         let message = `קובץ תכנון למקצוע ${currentSubject.name}`;
-        if (type === 'planning') {
-            message = `תכנון למקצוע ${currentSubject.name}`;
-        } else if (type === 'schedule') {
-            message = `לוז למקצוע ${currentSubject.name}`;
-        }
 
-        // הוספת תאריכים
-        const startDate = document.getElementById('startDate').value;
-        const endDate = document.getElementById('endDate').value;
-        if (startDate && endDate) {
-            const formattedStartDate = new Date(startDate).toLocaleDateString('he-IL');
-            const formattedEndDate = new Date(endDate).toLocaleDateString('he-IL');
-            message += ` לתקופה ${formattedStartDate} - ${formattedEndDate}`;
-        }
+        // הורדת הקובץ
+        const link = document.createElement('a');
+        link.href = URL.createObjectURL(blob);
+        link.download = `${currentSubject.name}_${type}.csv`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(link.href);
 
-        if (navigator.canShare && navigator.canShare({ files: [file] })) {
-            // שימוש ב Web Share API כשאפשר
-            const shareData = {
-                files: [file],
-                title: message,
-                text: message
-            };
+        // פתיחת ווטסאפ
+        window.open(`https://wa.me/${whatsappNumber}?text=${encodeURIComponent(message)}`, '_blank');
+        showError('הקובץ הורד. אנא שלח אותו בצ׳אט הווטסאפ שנפתח');
 
-            try {
-                await navigator.share(shareData);
-            } catch (err) {
-                // אם השיתוף נכשל, נחזור לדרך הרגילה
-                fallbackShare();
-            }
-        } else {
-            fallbackShare();
-        }
+    } catch (error) {
+        console.error('Error sharing:', error);
+        showError('שגיאה בשיתוף הקובץ');
+    }
+}
         function fallbackShare() {
           // המרת המספר לפורמט בינלאומי
           const whatsappNumber = '972' + phoneNumber.substring(1);
