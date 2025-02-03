@@ -3926,7 +3926,7 @@ async function shareFile(type = 'all') {
     }
 
     try {
-        const data = await exportToCSV(type);
+        const data = await exportToCSV(type);  // שימוש ב-exportToCSV במקום generateExportData
         const blob = new Blob(['\ufeff' + data], { type: 'text/csv;charset=utf-8;' });
         const file = new File([blob], `${currentSubject.name}_${type}.csv`, { type: 'text/csv' });
 
