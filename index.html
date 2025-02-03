@@ -4188,30 +4188,6 @@ async function sendToWhatsApp(type = 'all') {
         showError('שגיאה בשיתוף הקובץ');
     }
 }
-        function fallbackShare() {
-          // המרת המספר לפורמט בינלאומי
-          const whatsappNumber = '972' + phoneNumber.substring(1);
-
-          // הורדת הקובץ
-          const link = document.createElement('a');
-          link.href = URL.createObjectURL(blob);
-          link.download = `${currentSubject.name}_${type}.csv`;
-          document.body.appendChild(link);
-          link.click();
-          document.body.removeChild(link);
-          URL.revokeObjectURL(link.href);
-
-          // פתיחת ווטסאפ
-          window.open(`https://wa.me/${whatsappNumber}?text=${encodeURIComponent(message)}`, '_blank');
-
-          showError('הקובץ הורד. אנא שלח אותו בצ׳אט הווטסאפ שנפתח');
-      }
-
-  } catch (error) {
-      console.error('Error sharing:', error);
-      showError('שגיאה בשיתוף הקובץ');
-  }
-}
 function updateTotalLessons() {
     const totalPlanned = Array.from(document.querySelectorAll('.topic-container'))
         .reduce((sum, topic) => sum + (parseInt(topic.querySelector('.topic-lessons').value) || 0), 0);
