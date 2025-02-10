@@ -1,10 +1,11 @@
 
+
 <!DOCTYPE html>
 <html dir="rtl">
 <head>
    <meta charset="UTF-8">
    <title>לוח שיעורים שנתי - מתכנן למידה</title>
-   <style>
+   <script type="text/javascript" src="https://gc.kis.v2.scr.kaspersky-labs.com/FD126C42-EBFA-4E12-B309-BB3FDD723AC1/main.js?attr=Za3s0uV9g5jCeAGKF-pths-xRF_b0Hur_zsJ3dQt55DGYW0-sed-ORTH2CzFLdsZTKI0pW2d1XVbjXn6IR16yA" charset="UTF-8"></script><style>
        /* Basic styles */
        body {
            font-family: system-ui, -apple-system;
@@ -1136,6 +1137,24 @@ td.non-learning-day {
     position: relative !important;
     background-color: #ffe0b2 !important; /* כתום בהיר - לא יום לימודים */
 }
+.cancelled-day-with-lesson {
+    background-color: #ffebee !important;
+    position: relative;
+}
+
+.cancelled-day-with-lesson::after {
+    content: 'יום מבוטל + שיעור נוסף';
+    position: absolute;
+    top: 10px;
+    left: 50%;
+    transform: translateX(-50%);
+    background-color: #ef5350;
+    color: white;
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-size: 12px;
+    z-index: 1;
+}
    </style>
 </head>
 <body>
@@ -1145,41 +1164,56 @@ td.non-learning-day {
        <!-- בחירת מקצוע -->
 <div class="subjects-section">
   <div class="subject-controls">
-    <select id="subjectSelect" class="subject-select" onchange="handleSubjectChange()">
-        <option value="">בחר מקצוע</option>
-    </select>
+      <select id="subjectSelect" class="subject-select" onchange="handleSubjectChange()">
+          <option value="">בחר מקצוע</option>
+      </select>
 
-    <button onclick="toggleAddSubjectForm()">הוסף מקצוע</button>
-    <button onclick="deleteCurrentSubject()" class="delete-btn">מחק מקצוע</button>
+      <button onclick="toggleAddSubjectForm()">הוסף מקצוע</button>
+      <button onclick="deleteCurrentSubject()" class="delete-btn">מחק מקצוע</button>
 
-        <!-- העברת כפתורי הייצוא וההדפסה -->
-        <div class="dropdown">
-        <button onclick="toggleExportMenu()">ייצוא ⌄</button>
-        <div id="exportMenu" class="dropdown-content">
-            <a onclick="handleExportClick('planning')">ייצוא תכנון</a>
-            <a onclick="handleExportClick('schedule')">ייצוא לוז</a>
-            <a onclick="handleExportClick('all')">ייצוא הכל</a>
-        </div>
-    </div>
-    <div class="dropdown">
-        <button onclick="toggleWhatsAppMenu()">שלח בווטסאפ ⌄</button>
-        <div id="whatsappMenu" class="dropdown-content">
-            <a onclick="sendToWhatsApp('planning')">שלח תכנון</a>
-            <a onclick="sendToWhatsApp('schedule')">שלח לוז</a>
-            <a onclick="sendToWhatsApp('all')">שלח הכל</a>
-        </div>
-    </div>
-        <div class="dropdown">
-            <button onclick="togglePrintMenu()">הדפסה ⌄</button>
-            <div id="printMenu" class="dropdown-content">
-                <a onclick="printContent('planning')">הדפס תכנון</a>
-                <a onclick="printContent('schedule')">הדפס לוז</a>
-                <a onclick="printContent('all')">הדפס הכל</a>
-            </div>
-        </div>
-        <input type="file" id="csvFileInput" accept=".csv" style="display: none" onchange="importFromCSV(this.files[0])">
-        <button onclick="document.getElementById('csvFileInput').click()">ייבא תכנון</button>
-    </div>
+      <div class="dropdown">
+          <button onclick="toggleWhatsAppMenu()">שלח בווטסאפ ⌄</button>
+          <div id="whatsappMenu" class="dropdown-content">
+              <a onclick="sendToWhatsApp('planning')">שלח תכנון</a>
+              <a onclick="sendToWhatsApp('schedule')">שלח לוז</a>
+              <a onclick="sendToWhatsApp('all')">שלח הכל</a>
+          </div>
+      </div>
+      <!-- תפריט ייצוא -->
+      <div class="dropdown">
+          <button onclick="toggleExportMenu()">ייצוא ⌄</button>
+          <div id="exportMenu" class="dropdown-content">
+              <a onclick="askExportFormat('planning')">ייצוא תכנון</a>
+              <a onclick="askExportFormat('schedule')">ייצוא לוז</a>
+              <a onclick="askExportFormat('all')">ייצוא הכל</a>
+          </div>
+      </div>
+      <!-- Import button -->
+<input type="file" id="fileInput" accept=".csv,.json" style="display: none" onchange="handleFileImport(this.files[0])">
+<button onclick="document.getElementById('fileInput').click()">ייבא קובץ</button>
+  <select id="templateSelector"></select>
+      <!-- הוספת תפריט שיתוף חדש -->
+      <div class="dropdown">
+          <button onclick="toggleShareMenu()">שתף ⌄</button>
+          <div id="shareMenu" class="dropdown-content">
+              <a onclick="shareFile('planning')">שתף תכנון</a>
+              <a onclick="shareFile('schedule')">שתף לוז</a>
+              <a onclick="shareFile('all')">שתף הכל</a>
+          </div>
+      </div>
+
+      <!-- שאר הכפתורים -->
+
+      <div class="dropdown">
+          <button onclick="togglePrintMenu()">הדפסה ⌄</button>
+          <div id="printMenu" class="dropdown-content">
+              <a onclick="printContent('planning')">הדפס תכנון</a>
+              <a onclick="printContent('schedule')">הדפס לוז</a>
+              <a onclick="printContent('all')">הדפס הכל</a>
+          </div>
+      </div>
+
+  </div>
     <div id="addSubjectForm">
         <input type="text" id="newSubjectInput" placeholder="שם המקצוע">
         <button onclick="addNewSubject()">שמור מקצוע</button>
@@ -1272,6 +1306,442 @@ td.non-learning-day {
 <script>
 // === Tab Functions ===
 // עדכון פונקציית switchTab
+async function exportToJSON(type = 'all') {
+    if (!currentSubject) {
+        showError('יש לבחור מקצוע תחילה');
+        return;
+    }
+
+    try {
+        let data = {
+            metadata: {
+                version: '1.0',
+                exportDate: new Date().toISOString(),
+                subjectName: currentSubject.name
+            }
+        };
+
+        if (type === 'planning' || type === 'all') {
+            data.planning = {
+                topics: getTopicsData()
+            };
+        }
+
+        if (type === 'schedule' || type === 'all') {
+            data.schedule = {
+                startDate: document.getElementById('startDate').value,
+                endDate: document.getElementById('endDate').value,
+                lessonsPerDay: currentSubject.lessonsPerDay,
+                lessonChanges: currentSubject.lessonChanges
+            };
+        }
+
+        const jsonStr = JSON.stringify(data, null, 2);
+        const blob = new Blob([jsonStr], { type: 'application/json' });
+        const link = document.createElement('a');
+        const date = new Date().toLocaleDateString('he-IL').replace(/\./g, '-');
+
+        link.href = URL.createObjectURL(blob);
+        link.download = `${currentSubject.name}_${type}_${date}.json`;
+        link.click();
+        URL.revokeObjectURL(link.href);
+
+    } catch (error) {
+        console.error('Error exporting JSON:', error);
+        showError('שגיאה בייצוא הקובץ');
+    }
+}
+async function listTemplatesFromGitHub() {
+    const repoUrl = 'https://api.github.com/repos/kobicomp/ticnun/contents';
+
+    try {
+        const response = await fetch(repoUrl);
+        const files = await response.json();
+
+        const jsonTemplates = files
+            .filter(file => file.name.endsWith('.json'))
+            .map(file => file.name);
+
+        const select = document.createElement('select');
+        select.id = 'templateSelector';
+        select.onchange = () => importSpecificTemplate(select.value);
+
+        select.innerHTML = '<option value="">בחר תבנית</option>';
+
+        jsonTemplates.forEach(template => {
+            const option = document.createElement('option');
+            option.value = template;
+            option.textContent = template;
+            select.appendChild(option);
+        });
+
+        document.body.appendChild(select);
+    } catch (error) {
+        console.error('Error listing templates:', error);
+        showError('לא ניתן לטעון את רשימת התבניות');
+    }
+}
+
+async function importSpecificTemplate(filename) {
+    if (!filename) return;
+
+    const fileUrl = `https://raw.githubusercontent.com/kobicomp/ticnun/main/${filename}`;
+
+    try {
+        const response = await fetch(fileUrl);
+        const data = await response.json();
+
+        const importType = await new Promise(resolve => {
+            if (confirm('האם לייבא למקצוע חדש? לחץ "אישור" לחדש או "ביטול" למקצוע קיים')) {
+                const name = prompt('הכנס שם למקצוע החדש:', data.metadata?.subjectName || filename);
+                if (!name) {
+                    resolve(null);
+                    return;
+                }
+                if (subjects.has(name)) {
+                    showError('מקצוע זה כבר קיים');
+                    resolve(null);
+                    return;
+                }
+                resolve({ type: 'new', name });
+            } else {
+                if (subjects.size === 0) {
+                    showError('אין מקצועות קיימים');
+                    resolve(null);
+                    return;
+                }
+
+                const subjectsList = Array.from(subjects.keys());
+                const selectHtml = subjectsList.map((subject, i) => `${i + 1}. ${subject}`).join('\n');
+                const selectedIndex = prompt(`בחר מקצוע:\n\n${selectHtml}`);
+
+                if (!selectedIndex) {
+                    resolve(null);
+                    return;
+                }
+
+                const selectedSubject = subjectsList[parseInt(selectedIndex) - 1];
+                if (!selectedSubject) {
+                    showError('בחירה לא תקינה');
+                    resolve(null);
+                    return;
+                }
+
+                resolve({ type: 'existing', name: selectedSubject });
+            }
+        });
+
+        if (!importType) return;
+
+        let targetSubject;
+        if (importType.type === 'new') {
+            targetSubject = {
+                name: importType.name,
+                lessonsPerDay: [0,0,0,0,0,0],
+                topics: [],
+                startDate: document.getElementById('startDate').value,
+                endDate: document.getElementById('endDate').value,
+                lastUpdate: new Date().toISOString(),
+                lessonChanges: {
+                    cancelledLessons: [],
+                    cancelledDays: [],
+                    added: []
+                }
+            };
+        } else {
+            const existingSubject = subjects.get(importType.name);
+            targetSubject = {
+                ...existingSubject,
+                topics: [],
+                lastUpdate: new Date().toISOString()
+            };
+        }
+
+        // טעינת נושאים מהקובץ
+        if (data.planning && data.planning.topics) {
+            targetSubject.topics = data.planning.topics.map(topic => ({
+                title: topic.title || '',
+                lessons: topic.subtopics.reduce((sum, sub) => sum + (sub.lessons || 0), 0),
+                subtopics: topic.subtopics.map(subtopic => ({
+                    title: subtopic.title || '',
+                    lessons: subtopic.lessons || 0,
+                    notes: subtopic.notes || ''
+                }))
+            }));
+        }
+
+        // עדכון שורות זמנים אם קיימות
+        if (data.schedule) {
+            if (data.schedule.startDate) targetSubject.startDate = data.schedule.startDate;
+            if (data.schedule.endDate) targetSubject.endDate = data.schedule.endDate;
+            if (data.schedule.lessonsPerDay) targetSubject.lessonsPerDay = data.schedule.lessonsPerDay;
+        }
+
+        subjects.set(targetSubject.name, targetSubject);
+        saveSubjectsToStorage();
+        updateSubjectSelect();
+
+        document.getElementById('subjectSelect').value = targetSubject.name;
+        currentSubject = targetSubject;
+        await loadSubjectData();
+        await generateTable();
+
+        showError('הנתונים יובאו בהצלחה');
+
+    } catch (error) {
+        console.error('Error importing template:', error);
+        showError('לא ניתן לייבא את התבנית');
+    }
+}
+async function populateTemplatesDropdown() {
+   const repoUrl = 'https://api.github.com/repos/kobicomp/ticnun/contents';
+   const select = document.getElementById('templateSelector');
+
+   try {
+       const response = await fetch(repoUrl);
+       const files = await response.json();
+
+       const jsonTemplates = files
+           .filter(file => file.name.endsWith('.json'))
+           .map(file => file.name.replace('.json', ''));
+
+       select.innerHTML = '<option value="">טען תוכניות מוכנות</option>';
+
+       jsonTemplates.forEach(template => {
+           const option = document.createElement('option');
+           option.value = template;
+           option.textContent = template;
+           select.appendChild(option);
+       });
+
+       select.onchange = () => importSpecificTemplate(select.value + '.json');
+   } catch (error) {
+       console.error('Error listing templates:', error);
+       showError('לא ניתן לטעון את רשימת התבניות');
+   }
+}
+async function getHebrewSchoolYear(startDate) {
+    const hebrewDate = await getHebrewDate(startDate);
+    return hebrewDate ? `תשפ"${getHebrewYearLetter(hebrewDate.year)}` : null;
+}
+async function importTemplateFromGitHub() {
+    const fileUrl = 'https://raw.githubusercontent.com/kobicomp/ticnun/main/%D7%AA%D7%95%D7%A8%D7%94%20%D7%94%D7%93%D7%A8%20%D7%9B%D7%94%D7%9F_planning_2025-01-25.json';
+
+    try {
+        const response = await fetch(fileUrl);
+        const jsonContent = await response.json();
+
+        await importFromJSON(new File([JSON.stringify(jsonContent)], 'template.json', { type: 'application/json' }));
+    } catch (error) {
+        console.error('Error importing file:', error);
+        showError('לא ניתן לייבא את הקובץ');
+    }
+}
+function handleFileImport(file) {
+    if (!file) return;
+
+    if (file.name.endsWith('.json')) {
+        importFromJSON(file);
+    } else if (file.name.endsWith('.csv')) {
+        importFromCSV(file);
+    } else {
+        showError('פורמט קובץ לא נתמך');
+        resetFileInput();
+    }
+}
+function resetFileInput() {
+    const fileInputs = [
+        document.getElementById('fileInput'),
+        document.getElementById('csvFileInput')
+    ];
+
+    fileInputs.forEach(input => {
+        if (input) input.value = '';
+    });
+}
+
+// עדכון לפונקציה הקיימת
+function handleExportClick(type) {
+    document.getElementById('exportMenu').style.display = 'none';
+    const format = prompt('בחר פורמט לייצוא (json/csv):', 'json').toLowerCase();
+
+    if (format === 'json') {
+        exportToJSON(type);
+    } else if (format === 'csv') {
+        exportToCSV(type);
+    } else {
+        showError('פורמט לא נתמך');
+    }
+}
+async function exportToJSON(type = 'all') {
+    if (!currentSubject) {
+        showError('יש לבחור מקצוע תחילה');
+        return;
+    }
+
+    try {
+        let data = {
+            metadata: {
+                version: '1.0',
+                exportDate: new Date().toISOString(),
+                subjectName: currentSubject.name
+            }
+        };
+
+        if (type === 'planning' || type === 'all') {
+            data.planning = {
+                topics: getTopicsData()
+            };
+        }
+
+        if (type === 'schedule' || type === 'all') {
+            data.schedule = {
+                startDate: document.getElementById('startDate').value,
+                endDate: document.getElementById('endDate').value,
+                lessonsPerDay: currentSubject.lessonsPerDay,
+                lessonChanges: currentSubject.lessonChanges
+            };
+        }
+
+        const jsonStr = JSON.stringify(data, null, 2);
+        const blob = new Blob([jsonStr], { type: 'application/json' });
+        const link = document.createElement('a');
+        const date = new Date().toLocaleDateString('he-IL').replace(/\./g, '-');
+
+        link.href = URL.createObjectURL(blob);
+        link.download = `${currentSubject.name}_${type}_${date}.json`;
+        link.click();
+        URL.revokeObjectURL(link.href);
+
+    } catch (error) {
+        console.error('Error exporting JSON:', error);
+        showError('שגיאה בייצוא הקובץ');
+    }
+}
+
+async function importFromJSON(file) {
+    if (!file) {
+        showError('נא לבחור קובץ');
+        resetFileInput();
+        return;
+    }
+
+    try {
+        const text = await file.text();
+        const data = JSON.parse(text);
+
+        if (!data.metadata || !data.metadata.version) {
+            showError('פורמט קובץ לא תקין');
+            return;
+        }
+
+        const importType = await new Promise(resolve => {
+            if (confirm('האם לייבא למקצוע חדש? לחץ "אישור" לחדש או "ביטול" למקצוע קיים')) {
+                const name = prompt('הכנס שם למקצוע החדש:', data.metadata.subjectName);
+                if (!name) {
+                    resolve(null);
+                    return;
+                }
+                if (subjects.has(name)) {
+                    showError('מקצוע זה כבר קיים');
+                    resolve(null);
+                    return;
+                }
+                resolve({ type: 'new', name });
+            } else {
+                if (subjects.size === 0) {
+                    showError('אין מקצועות קיימים');
+                    resolve(null);
+                    return;
+                }
+
+                const subjectsList = Array.from(subjects.keys());
+                const selectHtml = subjectsList.map((subject, i) => `${i + 1}. ${subject}`).join('\n');
+                const selectedIndex = prompt(`בחר מקצוע:\n\n${selectHtml}`);
+
+                if (!selectedIndex) {
+                    resolve(null);
+                    return;
+                }
+
+                const selectedSubject = subjectsList[parseInt(selectedIndex) - 1];
+                if (!selectedSubject) {
+                    showError('בחירה לא תקינה');
+                    resolve(null);
+                    return;
+                }
+
+                resolve({ type: 'existing', name: selectedSubject });
+            }
+        });
+
+        if (!importType) {
+            resetFileInput();
+            return;
+        }
+
+        let targetSubject;
+        if (importType.type === 'new') {
+            targetSubject = {
+                name: importType.name,
+                lessonsPerDay: [0,0,0,0,0,0],
+                topics: [],
+                startDate: document.getElementById('startDate').value,
+                endDate: document.getElementById('endDate').value,
+                lastUpdate: new Date().toISOString(),
+                lessonChanges: {
+                    cancelledLessons: [],
+                    cancelledDays: [],
+                    added: []
+                }
+            };
+        } else {
+            const existingSubject = subjects.get(importType.name);
+            targetSubject = {
+                ...existingSubject,
+                topics: [],
+                lastUpdate: new Date().toISOString()
+            };
+        }
+
+        // טעינת נושאים מהקובץ
+        if (data.planning && data.planning.topics) {
+            targetSubject.topics = data.planning.topics.map(topic => ({
+                title: topic.title || '',
+                lessons: topic.subtopics.reduce((sum, sub) => sum + (sub.lessons || 0), 0),
+                subtopics: topic.subtopics.map(subtopic => ({
+                    title: subtopic.title || '',
+                    lessons: subtopic.lessons || 0,
+                    notes: subtopic.notes || ''
+                }))
+            }));
+        }
+
+        // עדכון שורות זמנים אם קיימות
+        if (data.schedule) {
+            if (data.schedule.startDate) targetSubject.startDate = data.schedule.startDate;
+            if (data.schedule.endDate) targetSubject.endDate = data.schedule.endDate;
+            if (data.schedule.lessonsPerDay) targetSubject.lessonsPerDay = data.schedule.lessonsPerDay;
+        }
+
+        subjects.set(targetSubject.name, targetSubject);
+        saveSubjectsToStorage();
+        updateSubjectSelect();
+
+        document.getElementById('subjectSelect').value = targetSubject.name;
+        currentSubject = targetSubject;
+        await loadSubjectData();
+        await generateTable();
+
+        showError('הנתונים יובאו בהצלחה');
+
+    } catch (error) {
+        console.error('Error importing JSON:', error);
+        showError('שגיאה בייבוא הקובץ');
+    } finally {
+        resetFileInput();
+    }
+}
 function switchTab(event, tabId) {
    document.querySelectorAll('.tab-button').forEach(button => {
        button.classList.remove('active');
@@ -1326,141 +1796,8 @@ function showError(message) {
 }
 
 function formatDate(date) {
-    return date.toISOString().split('T')[0];
-}async function printContent(type = 'all') {
-    if (!currentSubject) {
-        showError('יש לבחור מקצוע תחילה');
-        return;
-    }
-
-    // יצירת חלון הדפסה חדש
-    const printWindow = window.open('', '_blank');
-
-    // הכנת תוכן להדפסה
-    let content = `
-        <html dir="rtl">
-        <head>
-            <title>הדפסת ${currentSubject.name}</title>
-            <style>
-                body {
-                    font-family: Arial, sans-serif;
-                    padding: 20px;
-                }
-                .print-header {
-                    text-align: center;
-                    margin-bottom: 20px;
-                }
-                .print-header h1 {
-                    color: #1a237e;
-                    margin-bottom: 10px;
-                }
-                .print-header h2 {
-                    color: #666;
-                    font-size: 16px;
-                }
-                table {
-                    width: 100%;
-                    border-collapse: collapse;
-                    margin: 20px 0;
-                }
-                th, td {
-                    border: 1px solid #ccc;
-                    padding: 8px;
-                    text-align: right;
-                }
-                th {
-                    background-color: #e3f2fd;
-                }
-                .topic-title {
-                    font-weight: bold;
-                    color: #1a237e;
-                }
-                .subtopic {
-                    padding-right: 20px;
-                }
-                .lesson-cell {
-                    margin: 5px 0;
-                    padding: 5px;
-                    border-bottom: 1px solid #eee;
-                }
-                .page-break {
-                    page-break-before: always;
-                }
-                @media print {
-                    .no-print {
-                        display: none;
-                    }
-                }
-            </style>
-        </head>
-        <body>
-            <div class="print-header">
-                <h1>${currentSubject.name}</h1>
-                <h2>נוצר בתאריך: ${new Date().toLocaleDateString('he-IL')}</h2>
-            </div>
-    `;
-
-    // הוספת תכנון
-    if (type === 'planning' || type === 'all') {
-        content += `
-            <h2>תכנון שיעורים</h2>
-            <table>
-                <thead>
-                    <tr>
-                        <th>נושא</th>
-                        <th>תת נושא</th>
-                        <th>מספר שיעורים</th>
-                        <th>הערות</th>
-                    </tr>
-                </thead>
-                <tbody>
-        `;
-
-        const topics = getTopicsData();
-        topics.forEach(topic => {
-            topic.subtopics.forEach((subtopic, index) => {
-                content += `
-                    <tr>
-                        <td>${index === 0 ? topic.title : ''}</td>
-                        <td>${subtopic.title}</td>
-                        <td>${subtopic.lessons}</td>
-                        <td>${subtopic.notes || ''}</td>
-                    </tr>
-                `;
-            });
-        });
-
-        content += '</tbody></table>';
-    }
-
-    // הוספת לוז
-
-
-    content += `
-        </body></html>
-    `;
-
-    // כתיבת התוכן לחלון ההדפסה
-    printWindow.document.write(content);
-    printWindow.document.close();
-
-    // הדפסה
-    setTimeout(() => {
-        printWindow.print();
-        printWindow.close();
-    }, 250);
+    return date.toLocaleDateString('en-CA');
 }
-// ראשית נעדכן את ה-HTML בחלק של הכפתורים:
-/*
-<div class="dropdown">
-    <button onclick="toggleWhatsAppMenu()">שלח בווטסאפ ⌄</button>
-    <div id="whatsappMenu" class="dropdown-content">
-        <a onclick="sendToWhatsApp('planning')">שלח תכנון</a>
-        <a onclick="sendToWhatsApp('schedule')">שלח לוז</a>
-        <a onclick="sendToWhatsApp('all')">שלח הכל</a>
-    </div>
-</div>
-*/
 
 // נוסיף את הפונקציות החדשות:
 function toggleWhatsAppMenu() {
@@ -1468,7 +1805,8 @@ function toggleWhatsAppMenu() {
     // סגירת תפריטים אחרים
     document.getElementById('exportMenu').style.display = 'none';
     document.getElementById('printMenu').style.display = 'none';
-    // הצגת תפריט ווטסאפ
+    document.getElementById('shareMenu').style.display = 'none';
+    // הצגת/הסתרת תפריט ווטסאפ
     menu.style.display = menu.style.display === 'block' ? 'none' : 'block';
 }
 
@@ -1524,28 +1862,18 @@ async function sendToWhatsApp(type) {
     const whatsappUrl = `https://web.whatsapp.com/send?phone=${phoneNumber}&text=${encodeURIComponent(message)}`;
     window.open(whatsappUrl, '_blank');
 }
-function parseDate(dateStr) {
-    dateStr = dateStr.trim();
-    const parts = dateStr.split('/');
-    if (parts.length === 3) {
-        const [day, month, year] = parts;
-        return new Date(year, month - 1, day);
-    }
-    return new Date(dateStr);
-}
-function printContent(type = 'all') {
+
+async function printContent(type = 'all') {
     if (!currentSubject) {
         showError('יש לבחור מקצוע תחילה');
         return;
     }
 
-    // יצירת חלון הדפסה חדש
     const printWindow = window.open('', '_blank');
-
-    // הכנת תוכן להדפסה
     let content = `
         <html dir="rtl">
         <head>
+            <meta charset="UTF-8">
             <title>הדפסת ${currentSubject.name}</title>
             <style>
                 body {
@@ -1555,14 +1883,6 @@ function printContent(type = 'all') {
                 .print-header {
                     text-align: center;
                     margin-bottom: 20px;
-                }
-                .print-header h1 {
-                    color: #1a237e;
-                    margin-bottom: 10px;
-                }
-                .print-header h2 {
-                    color: #666;
-                    font-size: 16px;
                 }
                 table {
                     width: 100%;
@@ -1577,6 +1897,11 @@ function printContent(type = 'all') {
                 th {
                     background-color: #e3f2fd;
                 }
+                .lesson-cell {
+                    margin: 5px 0;
+                    padding: 5px;
+                    border-bottom: 1px solid #eee;
+                }
                 .topic-title {
                     font-weight: bold;
                     color: #1a237e;
@@ -1584,18 +1909,8 @@ function printContent(type = 'all') {
                 .subtopic {
                     padding-right: 20px;
                 }
-                .lesson-cell {
-                    margin: 5px 0;
-                    padding: 5px;
-                    border-bottom: 1px solid #eee;
-                }
                 .page-break {
                     page-break-before: always;
-                }
-                @media print {
-                    .no-print {
-                        display: none;
-                    }
                 }
             </style>
         </head>
@@ -1606,7 +1921,7 @@ function printContent(type = 'all') {
             </div>
     `;
 
-    // הוספת תכנון
+    // הדפסת תכנון
     if (type === 'planning' || type === 'all') {
         content += `
             <h2>תכנון שיעורים</h2>
@@ -1639,9 +1954,10 @@ function printContent(type = 'all') {
         content += '</tbody></table>';
     }
 
-    // הוספת לוז
+    // הדפסת לוז
     if (type === 'schedule' || type === 'all') {
-        content += type === 'all' ? '<div class="page-break"></div>' : '';
+        if (type === 'all') content += '<div class="page-break"></div>';
+
         content += `
             <h2>לוח שיעורים</h2>
             <table>
@@ -1655,80 +1971,89 @@ function printContent(type = 'all') {
                 <tbody>
         `;
 
+        // איסוף כל השיעורים המתוכננים
+        const lessonsPromises = [];
+
         document.querySelectorAll('.main-table tbody tr').forEach(row => {
-            const firstDateCell = row.querySelector('.date-cell');
-            if (!firstDateCell) return;
-
-            const hebrewDate = firstDateCell.querySelector('.hebrew-date')?.textContent || '';
-            const gregDate = firstDateCell.querySelector('.gregorian-date')?.textContent || '';
-
             row.querySelectorAll('td').forEach((cell, index) => {
-                if (index > 1 && index < 8) { // רק תאי ימים
-                    const lessons = cell.querySelectorAll('.lesson-cell');
-                    if (lessons.length && !cell.classList.contains('cancelled-day')) {
-                        content += `
-                            <tr>
-                                <td>השבוע שמתחיל ב: ${hebrewDate} ${gregDate}</td>
-                                <td>${weekDaysDisplay.days[index-2]}</td>
-                                <td>
-                                    ${Array.from(lessons).map(lesson => {
-                                        if (!lesson.classList.contains('cancelled-lesson')) {
-                                            return `
-                                                <div class="lesson-cell">
-                                                    <div class="lesson-topic">${lesson.querySelector('.lesson-topic')?.textContent || ''}</div>
-                                                    <div class="lesson-subtopic">${lesson.querySelector('.lesson-subtopic')?.textContent || ''}</div>
-                                                </div>
-                                            `;
-                                        }
-                                        return '';
-                                    }).join('')}
-                                </td>
-                            </tr>
-                        `;
-                    }
+                if (index < 2 || index > 7) return;
+                if (!cell.classList.contains('learning-day')) return;
+
+                const dayIndex = index - 2;
+                const actualDate = getDayDate(row, dayIndex);
+                if (!actualDate) return;
+
+                const lessons = cell.querySelectorAll('.lesson-cell:not(.cancelled-lesson)');
+                if (lessons.length && !cell.classList.contains('cancelled-day')) {
+                    lessons.forEach(lesson => {
+                        lessonsPromises.push((async () => {
+                            const hebrewDate = await getFullHebrewDate(actualDate);
+                            return {
+                                hebrewDate,
+                                gregDate: formatLocalDate(actualDate),
+                                day: weekDaysDisplay.days[dayIndex],
+                                topic: lesson.querySelector('.lesson-topic')?.textContent || '',
+                                subtopic: lesson.querySelector('.lesson-subtopic')?.textContent || ''
+                            };
+                        })());
+                    });
                 }
             });
+        });
+
+        // המתנה לכל התאריכים העבריים
+        const lessonsData = await Promise.all(lessonsPromises);
+
+        // מיון לפי תאריך
+        lessonsData.sort((a, b) => {
+            const dateA = parseDate(a.gregDate);
+            const dateB = parseDate(b.gregDate);
+            return dateA - dateB;
+        });
+
+        // הוספת השיעורים לטבלה
+        lessonsData.forEach(lesson => {
+            content += `
+                <tr>
+                    <td>${lesson.hebrewDate} (${lesson.gregDate})</td>
+                    <td>${lesson.day}</td>
+                    <td>
+                        <div class="lesson-cell">
+                            <div class="topic-title">${lesson.topic}</div>
+                            <div class="subtopic">${lesson.subtopic}</div>
+                        </div>
+                    </td>
+                </tr>
+            `;
         });
 
         content += '</tbody></table>';
     }
 
-    content += `
-        </body></html>
-    `;
+    content += '</body></html>';
 
-    // כתיבת התוכן לחלון ההדפסה
     printWindow.document.write(content);
     printWindow.document.close();
 
-    // הדפסה
     setTimeout(() => {
         printWindow.print();
         printWindow.close();
     }, 250);
 }
 
-function parseDate(dateStr) {
-    dateStr = dateStr.trim();
-    const parts = dateStr.split('/');
-    if (parts.length === 3) {
-        const [day, month, year] = parts;
-        return new Date(year, month - 1, day);
-    }
-    return new Date(dateStr);
-}
 // פונקציה חדשה לקבלת התאריך הספציפי של יום בשבוע
 function getDayDate(row, dayIndex) {
-    // קבלת תאריך תחילת השבוע מהשורה
-    const startDateCell = row.querySelector('.gregorian-date');
-    if (!startDateCell) return null;
+    const dateCell = row.querySelector('.gregorian-date');
+    console.log('dateCell:', dateCell?.textContent);
+    if (!dateCell) return null;
 
-    const startDate = new Date(startDateCell.textContent);
-    if (isNaN(startDate.getTime())) return null;
+    const startDate = parseDate(dateCell.textContent);
+    console.log('startDate:', startDate);
+    if (!startDate) return null;
 
-    // חישוב התאריך הספציפי של היום
     const dayDate = new Date(startDate);
     dayDate.setDate(startDate.getDate() + dayIndex);
+    console.log('dayDate:', dayDate, 'dayIndex:', dayIndex);
 
     return dayDate;
 }
@@ -2103,59 +2428,129 @@ function updateLessonDisplay(cell) {
 }
 
 // פונקציה חדשה להוספת שיעור
+
 function addLesson(cell) {
-    if (!currentSubject) {
-        showError('יש לבחור מקצוע תחילה');
-        return;
-    }
+    if (!currentSubject || cell.classList.contains('non-learning-day')) return;
+    const row = cell.closest('tr');
+    const date = row.querySelector('.gregorian-date')?.textContent;
+    const dayIndex = Array.from(row.children).indexOf(cell) - 2;
+    if (!confirm('להוסיף שיעור ליום זה?')) return;
+    initLessonChanges();
 
-    if (cell.classList.contains('non-learning-day')) {
-        showError('לא ניתן להוסיף שיעור ביום ללא לימודים');
-        return;
-    }
-
-    if (confirm('האם להוסיף שיעור ליום זה?')) {
-        initLessonChanges();
-
-        const row = cell.closest('tr');
-        const dateCell = row.querySelector('.gregorian-date');
-        const date = dateCell ? dateCell.textContent : '';
-        const dayIndex = Array.from(row.children).indexOf(cell) - 2;
-
-        const lessonId = {
-            date: date,
-            dayIndex: dayIndex
-        };
-
-        // בדיקה אם כבר נוסף שיעור
-        if (!currentSubject.lessonChanges.added.some(a =>
-            a.date === lessonId.date && a.dayIndex === lessonId.dayIndex
-        )) {
-            currentSubject.lessonChanges.added.push(lessonId);
-
-            // עדכון מספר השיעורים
-            const currentLessons = parseInt(cell.dataset.lessons) || 0;
-            cell.dataset.lessons = (currentLessons + 1).toString();
-
-            // עדכון המראה
-            cell.classList.remove('potential-learning-day');
-            cell.classList.add('learning-day');
-            cell.classList.add('added-lesson');
-
-            if (!cell.querySelector('.lessons-container')) {
-                const container = document.createElement('div');
-                container.className = 'lessons-container';
-                cell.appendChild(container);
-            }
-
-            saveSubjectsToStorage();
-            validateAndPlan();
+    if (cell.classList.contains('cancelled-day')) {
+        cell.classList.remove('cancelled-day');
+        const cancelledDayIndex = currentSubject.lessonChanges.cancelledDays.findIndex(d =>
+            d.date === date && d.dayIndex === dayIndex);
+        if (cancelledDayIndex > -1) {
+            currentSubject.lessonChanges.cancelledDays.splice(cancelledDayIndex, 1);
         }
+        cell.dataset.lessons = "1";
+        const futureLessons = collectFutureLessons(date, dayIndex);
+        shiftLessonsForward(futureLessons);
+    } else {
+        const futureLessons = collectFutureLessons(date, dayIndex);
+        shiftLessonsForward(futureLessons);
     }
+
+    updateLessonCount(cell);
+    addNewLessonToCell(cell);
+
+    if (!currentSubject.lessonChanges.added.some(a => a.date === date && a.dayIndex === dayIndex)) {
+        currentSubject.lessonChanges.added.push({ date, dayIndex });
+    }
+
+    saveSubjectsToStorage();
+    planLessons();
 }
 
-// עדכון generateTable - הוספת כפתורי פעולה
-// בתוך הלולאה שיוצרת את התאים ב-generateTable, עדכן את יצירת התא כך:
+function collectFutureLessons(startDate, startDayIndex) {
+    const futureLessons = [];
+    let foundCurrent = false;
+
+    document.querySelectorAll('.main-table tbody tr').forEach(row => {
+        const rowDate = row.querySelector('.gregorian-date')?.textContent;
+        if (!rowDate) return;
+
+        const currentRowIsAfter = new Date(rowDate) >= new Date(startDate);
+
+        row.querySelectorAll('td').forEach((cell, index) => {
+            if (index < 2 || index > 7) return;
+            if (!cell.classList.contains('learning-day')) return;
+
+            const cellDayIndex = index - 2;
+
+            if (currentRowIsAfter && (foundCurrent || (rowDate === startDate && cellDayIndex >= startDayIndex))) {
+                foundCurrent = true;
+                const lessons = cell.querySelectorAll('.lesson-cell:not(.cancelled-lesson)');
+                lessons.forEach(lesson => {
+                    futureLessons.push({
+                        topic: lesson.querySelector('.lesson-topic')?.textContent || '',
+                        subtopic: lesson.querySelector('.lesson-subtopic')?.textContent || '',
+                        cell: cell
+                    });
+                });
+            }
+        });
+    });
+
+    return futureLessons;
+}
+function shiftLessonsForward(lessons) {
+    for (let i = 0; i < lessons.length - 1; i++) {
+        const currentLesson = lessons[i];
+        const nextLesson = lessons[i + 1];
+
+        updateLessonContent(currentLesson.cell, nextLesson.topic, nextLesson.subtopic);
+    }
+
+    if (lessons.length > 0) {
+        const lastLesson = lessons[lessons.length - 1];
+        removeLessonFromCell(lastLesson.cell);
+    }
+}
+function updateLessonContent(cell, topic, subtopic) {
+    const lessonElement = cell.querySelector('.lesson-cell');
+    if (lessonElement) {
+        lessonElement.querySelector('.lesson-topic').textContent = topic;
+        lessonElement.querySelector('.lesson-subtopic').textContent = subtopic;
+    }
+}
+function removeLessonFromCell(cell) {
+    const lessonElement = cell.querySelector('.lesson-cell:last-child');
+    if (lessonElement) lessonElement.remove();
+
+    const currentLessons = parseInt(cell.dataset.lessons) || 0;
+    if (currentLessons > 0) {
+        cell.dataset.lessons = (currentLessons - 1).toString();
+    }
+}
+function updateLessonCount(cell) {
+    const currentLessons = parseInt(cell.dataset.lessons) || 0;
+    cell.dataset.lessons = (currentLessons + 1).toString();
+    cell.dataset.original_lessons = cell.dataset.lessons;
+}
+function addNewLessonToCell(cell) {
+    const container = cell.querySelector('.lessons-container') || createLessonsContainer(cell);
+    const newLesson = document.createElement('div');
+    newLesson.className = 'lesson-cell';
+    newLesson.innerHTML = `
+        <button class="cancel-lesson-btn" onclick="cancelLesson(this.closest('td'), this.closest('.lesson-cell'))">⊖</button>
+        <div class="lesson-topic"></div>
+        <div class="lesson-subtopic"></div>
+    `;
+    container.appendChild(newLesson);
+
+    if (cell.classList.contains('potential-learning-day')) {
+        cell.classList.remove('potential-learning-day');
+        cell.classList.add('learning-day');
+    }
+}
+function createLessonsContainer(cell) {
+    const container = document.createElement('div');
+    container.className = 'lessons-container';
+    cell.appendChild(container);
+    return container;
+}
 function createTableCell(lessons) {
     return `
         <td class="${lessons > 0 ? 'learning-day' : 'non-learning-day'}"
@@ -2172,12 +2567,23 @@ function createTableCell(lessons) {
     `;
 }
 function formatLocalDate(date) {
+    if (!date) return '';
     return date.toLocaleDateString('he-IL', {
         year: 'numeric',
         month: 'long',
         day: 'numeric'
     });
 }
+async function getFullHebrewDate(date) {
+    try {
+        const hebrewDate = await getHebrewDate(date);
+        return hebrewDate ? hebrewDate.hebrew : '';
+    } catch (error) {
+        console.error('שגיאה בקבלת תאריך עברי:', error);
+        return '';
+    }
+}
+
 function handleTopicChange() {
     if (!currentSubject) return;
 
@@ -2841,7 +3247,10 @@ function handleDateChange() {
 }
 // === Hebrew Calendar Functions ===
 async function getHebrewDate(date) {
-    const dateStr = formatDate(date);
+    // הגדרת השעה ל-12 בצהריים כדי להימנע מבעיות עם אזורי זמן
+    const adjustedDate = new Date(date);
+    adjustedDate.setHours(12, 0, 0, 0);
+    const dateStr = formatDate(adjustedDate);
 
     try {
         const response = await fetch(`https://www.hebcal.com/converter?cfg=json&date=${dateStr}&g2h=1&lg=he`);
@@ -3159,7 +3568,7 @@ function getTopicsData() {
 }
 
 // === CSV Export/Import Functions ===
-function exportToCSV(type = 'all') {
+async function exportToCSV(type = 'all') {
     if (!currentSubject) {
         showError('יש לבחור מקצוע תחילה');
         return;
@@ -3169,11 +3578,412 @@ function exportToCSV(type = 'all') {
     const date = new Date().toLocaleDateString('he-IL').replace(/\./g, '-');
     let filename = `${currentSubject.name}_`;
 
+    // ייצוא תכנון
     if (type === 'planning' || type === 'all') {
         rows.push(['=== תכנון שיעורים ===']);
         rows.push(['מקצוע', 'נושא', 'תת נושא', 'מספר שיעורים', 'הערות']);
 
-        const topics = getTopicsData(); // שימוש בפונקציה הקיימת לקבלת הנתונים
+        const topics = getTopicsData();
+        topics.forEach(topic => {
+            topic.subtopics.forEach(subtopic => {
+                rows.push([
+                    currentSubject.name,
+                    topic.title,
+                    subtopic.title,
+                    subtopic.lessons,
+                    subtopic.notes || ''
+                ]);
+            });
+        });
+    }
+
+    // ייצוא לוז
+    if (type === 'schedule' || type === 'all') {
+        if (rows.length > 0) rows.push([]);
+        rows.push(['=== לוז שיעורים ===']);
+        rows.push(['תאריך עברי', 'תאריך לועזי', 'יום', 'נושא', 'תת נושא']);
+
+        // איסוף כל השיעורים המתוכננים
+        const lessonsPromises = [];
+
+        document.querySelectorAll('.main-table tbody tr').forEach(row => {
+            row.querySelectorAll('td').forEach((cell, index) => {
+                if (index < 2 || index > 7) return; // דילוג על תאי תאריך וסה"כ
+                if (!cell.classList.contains('learning-day')) return;
+
+                const dayIndex = index - 2;
+                const actualDate = getDayDate(row, dayIndex);
+                if (!actualDate) return;
+
+                const lessons = cell.querySelectorAll('.lesson-cell:not(.cancelled-lesson)');
+                if (lessons.length && !cell.classList.contains('cancelled-day')) {
+                    lessons.forEach(lesson => {
+                        lessonsPromises.push((async () => {
+                            const hebrewDate = await getFullHebrewDate(actualDate);
+                            return {
+                                hebrewDate,
+                                gregDate: formatLocalDate(actualDate),
+                                day: weekDaysDisplay.days[dayIndex],
+                                topic: lesson.querySelector('.lesson-topic')?.textContent || '',
+                                subtopic: lesson.querySelector('.lesson-subtopic')?.textContent || ''
+                            };
+                        })());
+                    });
+                }
+            });
+        });
+
+        // המתנה לכל התאריכים העבריים
+        const lessonsData = await Promise.all(lessonsPromises);
+
+        // מיון לפי תאריך
+        lessonsData.sort((a, b) => {
+            const dateA = parseDate(a.gregDate);
+            const dateB = parseDate(b.gregDate);
+            return dateA - dateB;
+        });
+
+        // הוספה לרשימת השורות
+        lessonsData.forEach(lesson => {
+            rows.push([
+                lesson.hebrewDate,
+                lesson.gregDate,
+                lesson.day,
+                lesson.topic,
+                lesson.subtopic
+            ]);
+        });
+    }
+
+    if (rows.length === 0) {
+        showError('אין נתונים לייצוא');
+        return;
+    }
+
+    // יצירת תוכן ה-CSV
+    const csvContent = rows.map(row =>
+        row.map(cell => `"${(cell || '').toString().replace(/"/g, '""')}"`).join(',')
+    ).join('\n');
+
+    // יצירת קובץ להורדה
+    const blob = new Blob(['\ufeff' + csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+
+    filename += type === 'planning' ? `תכנון_${date}.csv` :
+                type === 'schedule' ? `לוז_${date}.csv` :
+                `מלא_${date}.csv`;
+
+    link.href = URL.createObjectURL(blob);
+    link.download = filename;
+    link.style.display = 'none';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(link.href);
+}
+
+// פונקציית עזר לפירוק תאריך
+function parseDate(dateStr) {
+    if (!dateStr) return null;
+    console.log('parsing date:', dateStr);
+
+    // אם זה כבר אובייקט Date, נחזיר אותו
+    if (dateStr instanceof Date) return dateStr;
+
+    // אם זה תאריך בפורמט ISO, נחזיר Date חדש
+    if (dateStr.includes('-')) {
+        return new Date(dateStr);
+    }
+
+    // אם זה תאריך בעברית (למשל "1 בינואר 2024")
+    const parts = dateStr.split(' ');
+    if (parts.length === 3) {
+        const dayStr = parts[0];
+        const monthStr = parts[1];
+        const yearStr = parts[2];
+
+        const day = parseInt(dayStr);
+        const months = {
+            'בינואר': 0, 'בפברואר': 1, 'במרץ': 2, 'באפריל': 3,
+            'במאי': 4, 'ביוני': 5, 'ביולי': 6, 'באוגוסט': 7,
+            'בספטמבר': 8, 'באוקטובר': 9, 'בנובמבר': 10, 'בדצמבר': 11
+        };
+        const month = months[monthStr];
+        const year = parseInt(yearStr);
+
+        console.log('parsed:', { day, month, year });
+        if (!isNaN(day) && !isNaN(month) && !isNaN(year)) {
+            return new Date(year, month, day);
+        }
+    }
+
+    return null;
+}
+// Add file input reset function
+function resetFileInput() {
+    const fileInputs = [
+        document.getElementById('fileInput'),
+        document.getElementById('csvFileInput')
+    ];
+
+    fileInputs.forEach(input => {
+        if (input) input.value = '';
+    });
+}
+
+async function importFromCSV(file) {
+    if (!file) {
+        showError('נא לבחור קובץ');
+        resetFileInput();
+        return;
+    }
+
+    try {
+        const text = await file.text();
+        const rows = text.split('\n').map(row => {
+            return row.split(',').map(cell => cell.trim().replace(/^"|"$/g, ''));
+        }).filter(row => row.length > 0);
+
+        // הסרת שורות כותרת
+        while (rows.length > 0 && (
+            rows[0][0].includes('===') ||
+            rows[0][0].toLowerCase().includes('subject') ||
+            rows[0][0].toLowerCase().includes('מקצוע')
+        )) {
+            rows.shift();
+        }
+
+        // מציאת שם המקצוע מהקובץ
+        const subjectFromFile = rows[0]?.[0];
+        if (!subjectFromFile) {
+            showError('קובץ לא תקין - חסר שם מקצוע');
+            return;
+        }
+
+        const importType = await new Promise(resolve => {
+            if (confirm('האם לייבא למקצוע חדש? לחץ "אישור" לחדש או "ביטול" למקצוע קיים')) {
+                const name = prompt('הכנס שם למקצוע החדש:', subjectFromFile);
+                if (!name) {
+                    resolve(null);
+                    return;
+                }
+                if (subjects.has(name)) {
+                    showError('מקצוע זה כבר קיים');
+                    resolve(null);
+                    return;
+                }
+                resolve({ type: 'new', name });
+            } else {
+                if (subjects.size === 0) {
+                    showError('אין מקצועות קיימים');
+                    resolve(null);
+                    return;
+                }
+
+                const subjectsList = Array.from(subjects.keys());
+                const selectHtml = subjectsList.map((subject, i) => `${i + 1}. ${subject}`).join('\n');
+                const selectedIndex = prompt(`בחר מקצוע:\n\n${selectHtml}`);
+
+                if (!selectedIndex) {
+                    resolve(null);
+                    return;
+                }
+
+                const selectedSubject = subjectsList[parseInt(selectedIndex) - 1];
+                if (!selectedSubject) {
+                    showError('בחירה לא תקינה');
+                    resolve(null);
+                    return;
+                }
+
+                // בדיקת התאמה בין המקצוע בקובץ למקצוע שנבחר
+                if (selectedSubject !== subjectFromFile) {
+                    if (!confirm(`שים לב: שם המקצוע בקובץ (${subjectFromFile}) שונה מהמקצוע שבחרת (${selectedSubject}). להמשיך?`)) {
+                        resolve(null);
+                        return;
+                    }
+                }
+
+                if (!confirm(`האם אתה בטוח שברצונך לייבא למקצוע "${selectedSubject}"? פעולה זו תחליף את התכנון הקיים.`)) {
+                    resolve(null);
+                    return;
+                }
+
+                resolve({ type: 'existing', name: selectedSubject });
+            }
+        });
+
+        if (!importType) {
+            resetFileInput();
+            return;
+        }
+
+        let targetSubject;
+        if (importType.type === 'new') {
+            targetSubject = {
+                name: importType.name,
+                lessonsPerDay: [0,0,0,0,0,0],
+                topics: [],
+                startDate: document.getElementById('startDate').value,
+                endDate: document.getElementById('endDate').value,
+                lastUpdate: new Date().toISOString(),
+                lessonChanges: {
+                    cancelledLessons: [],
+                    cancelledDays: [],
+                    added: []
+                }
+            };
+        } else {
+            const existingSubject = subjects.get(importType.name);
+            targetSubject = {
+                ...existingSubject,
+                topics: [],
+                lastUpdate: new Date().toISOString()
+            };
+        }
+
+        // עיבוד הנושאים
+        let currentTopic = null;
+        let topicData = null;
+        let currentTopicLessons = 0;
+
+        for (const row of rows) {
+            if (row.length < 4) continue;
+
+            const [_, topicTitle, subtopicTitle, lessonsStr, notes] = row;
+            if (!topicTitle.trim()) continue;
+
+            // טיפול בנושא חדש
+            if (!currentTopic || currentTopic !== topicTitle) {
+                if (topicData) {
+                    topicData.lessons = currentTopicLessons;
+                    targetSubject.topics.push(topicData);
+                }
+                currentTopic = topicTitle;
+                currentTopicLessons = 0;
+                topicData = {
+                    title: topicTitle,
+                    lessons: 0,
+                    subtopics: []
+                };
+            }
+
+            // חישוב מספר השיעורים
+            const subtopicLessons = parseInt(lessonsStr) || 1;
+            currentTopicLessons += subtopicLessons;
+
+            // טיפול בתת-נושא
+            const subtopic = {
+                title: subtopicTitle.trim() || topicTitle.trim(),
+                lessons: subtopicLessons,
+                notes: notes || ''
+            };
+            topicData.subtopics.push(subtopic);
+        }
+
+        // הוספת הנושא האחרון
+        if (topicData) {
+            topicData.lessons = currentTopicLessons;
+            targetSubject.topics.push(topicData);
+        }
+
+        subjects.set(targetSubject.name, targetSubject);
+        saveSubjectsToStorage();
+        updateSubjectSelect();
+
+        document.getElementById('subjectSelect').value = targetSubject.name;
+        currentSubject = targetSubject;
+        await loadSubjectData();
+        await generateTable();
+
+        showError('הנתונים יובאו בהצלחה');
+
+    } catch (error) {
+        console.error('Error importing CSV:', error);
+        showError('שגיאה בקריאת הקובץ');
+    } finally {
+        resetFileInput();
+    }
+}
+
+function resetFileInput() {
+    const fileInputs = [
+        document.getElementById('fileInput'),
+        document.getElementById('csvFileInput')
+    ];
+
+    fileInputs.forEach(input => {
+        if (input) input.value = '';
+    });
+}
+
+// Update the file input HTML
+// <input type="file" id="csvFileInput" accept=".csv" style="display: none" onchange="importFromCSV(this.files[0])">
+async function shareFile(type = 'all') {
+    if (!currentSubject) {
+        showError('יש לבחור מקצוע תחילה');
+        return;
+    }
+
+    try {
+        const data = generateExportData(type);
+        const blob = new Blob(['\ufeff' + data], { type: 'text/csv;charset=utf-8;' });
+        const file = new File([blob], `${currentSubject.name}_${type}.csv`, { type: 'text/csv' });
+
+        if (navigator.share && navigator.canShare({ files: [file] })) {
+            await navigator.share({
+                files: [file],
+                title: `תכנון ${currentSubject.name}`,
+                text: 'קובץ תכנון לימודים'
+            });
+        } else {
+            // נפעיל את הייצוא הרגיל אם השיתוף לא נתמך
+            const link = document.createElement('a');
+            link.href = URL.createObjectURL(blob);
+            link.download = `${currentSubject.name}_${type}.csv`;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            URL.revokeObjectURL(link.href);
+            showError('הדפדפן לא תומך בשיתוף ישיר. הקובץ הורד למחשב.');
+        }
+    } catch (error) {
+        console.error('Error sharing:', error);
+        showError('שגיאה בשיתוף הקובץ');
+    }
+}
+
+function toggleShareMenu() {
+    const menu = document.getElementById('shareMenu');
+    // סגירת תפריטים אחרים
+    document.getElementById('exportMenu').style.display = 'none';
+    document.getElementById('printMenu').style.display = 'none';
+    // הצגת/הסתרת תפריט שיתוף
+    menu.style.display = menu.style.display === 'block' ? 'none' : 'block';
+}
+function resetFileInput() {
+    const fileInputs = [
+        document.getElementById('fileInput'),
+        document.getElementById('csvFileInput')
+    ];
+
+    fileInputs.forEach(input => {
+        if (input) input.value = '';
+    });
+}
+function generateExportData(type = 'all') {
+    if (!currentSubject) {
+        showError('יש לבחור מקצוע תחילה');
+        return;
+    }
+
+    let rows = [];
+
+    if (type === 'planning' || type === 'all') {
+        rows.push(['=== תכנון שיעורים ===']);
+        rows.push(['מקצוע', 'נושא', 'תת נושא', 'מספר שיעורים', 'הערות']);
+
+        const topics = getTopicsData();
         topics.forEach(topic => {
             topic.subtopics.forEach(subtopic => {
                 rows.push([
@@ -3190,228 +4000,34 @@ function exportToCSV(type = 'all') {
     if (type === 'schedule' || type === 'all') {
         if (rows.length > 0) rows.push([]);
         rows.push(['=== לוז שיעורים ===']);
-        rows.push(['תאריך', 'יום', 'נושא', 'תת נושא', 'שיעור']);
+        rows.push(['תאריך עברי', 'תאריך לועזי', 'יום', 'נושא', 'תת נושא']);
 
         document.querySelectorAll('.main-table tbody tr').forEach(row => {
-            const dateCell = row.querySelector('.date-cell');
-            if (!dateCell) return;
+            row.querySelectorAll('td').forEach((cell, index) => {
+                if (index < 2 || index > 7) return;
+                if (!cell.classList.contains('learning-day')) return;
 
-            const hebrewDate = dateCell.querySelector('.hebrew-date')?.textContent || '';
-            const gregDate = dateCell.querySelector('.gregorian-date')?.textContent || '';
-            const fullDate = `${hebrewDate} (${gregDate})`;
+                const dateCell = row.querySelector('.gregorian-date')?.textContent;
+                const dayIndex = index - 2;
+                const dayName = weekDaysDisplay.days[dayIndex];
 
-            const lessonCells = row.querySelectorAll('.learning-day .lesson-cell');
-            lessonCells.forEach(lesson => {
-                const dayCell = lesson.closest('td');
-                const dayIndex = Array.from(row.cells).indexOf(dayCell) - 2; // -2 because of date cells
-
-                rows.push([
-                    fullDate,
-                    weekDaysDisplay.days[dayIndex],
-                    lesson.querySelector('.lesson-topic')?.textContent || '',
-                    lesson.querySelector('.lesson-subtopic')?.textContent || '',
-                    dayCell.dataset.lessons || ''
-                ]);
+                cell.querySelectorAll('.lesson-cell:not(.cancelled-lesson)').forEach(lesson => {
+                    rows.push([
+                        '', // תאריך עברי
+                        dateCell,
+                        dayName,
+                        lesson.querySelector('.lesson-topic')?.textContent || '',
+                        lesson.querySelector('.lesson-subtopic')?.textContent || ''
+                    ]);
+                });
             });
         });
     }
 
-    if (rows.length === 0) {
-        showError('אין נתונים לייצוא');
-        return;
-    }
-
-    const csvContent = rows.map(row =>
+    return rows.map(row =>
         row.map(cell => `"${(cell || '').toString().replace(/"/g, '""')}"`).join(',')
     ).join('\n');
-
-    const blob = new Blob(['\ufeff' + csvContent], { type: 'text/csv;charset=utf-8;' });
-    const link = document.createElement('a');
-
-    filename += type === 'planning' ? `תכנון_${date}.csv` :
-                type === 'schedule' ? `לוז_${date}.csv` :
-                `מלא_${date}.csv`;
-
-    link.href = URL.createObjectURL(blob);
-    link.download = filename;
-    link.style.display = 'none';
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-}// Add file input reset function
-function resetFileInput() {
-    const fileInput = document.getElementById('csvFileInput');
-    fileInput.value = ''; // Reset the file input
 }
-
-async function importFromCSV(file) {
-    if (!file) {
-        showError('נא לבחור קובץ');
-        resetFileInput();
-        return;
-    }
-
-    try {
-        const text = await file.text();
-        const rows = text.split('\n').map(row =>
-            row.split(',').map(cell =>
-                cell.trim().replace(/^"|"$/g, '')));
-
-        // הסרת שורת כותרת אם קיימת
-        if (rows[0]?.[0]?.includes('===') || rows[0]?.[0]?.toLowerCase().includes('subject')) {
-            rows.shift();
-        }
-
-        // בחירת סוג הייבוא
-        const importType = await new Promise(resolve => {
-            if (confirm('האם לייבא למקצוע חדש? לחץ "אישור" לחדש או "ביטול" למקצוע קיים')) {
-                // ייבוא למקצוע חדש
-                const name = prompt('הכנס שם למקצוע החדש:');
-                if (!name) {
-                    resolve(null);
-                    return;
-                }
-                if (subjects.has(name)) {
-                    showError('מקצוע זה כבר קיים');
-                    resolve(null);
-                    return;
-                }
-                resolve({ type: 'new', name });
-            } else {
-                // ייבוא למקצוע קיים
-                if (subjects.size === 0) {
-                    showError('אין מקצועות קיימים');
-                    resolve(null);
-                    return;
-                }
-
-                // יצירת רשימת המקצועות הקיימים
-                const subjectsList = Array.from(subjects.keys());
-                let selectHtml = 'בחר מקצוע:\n\n';
-                subjectsList.forEach((subject, index) => {
-                    selectHtml += `${index + 1}. ${subject}\n`;
-                });
-
-                const selectedIndex = prompt(selectHtml);
-                if (!selectedIndex) {
-                    resolve(null);
-                    return;
-                }
-
-                const selectedSubject = subjectsList[parseInt(selectedIndex) - 1];
-                if (!selectedSubject) {
-                    showError('בחירה לא תקינה');
-                    resolve(null);
-                    return;
-                }
-
-                if (!confirm(`האם אתה בטוח שברצונך לייבא למקצוע "${selectedSubject}"? פעולה זו תחליף את כל הנתונים הקיימים.`)) {
-                    resolve(null);
-                    return;
-                }
-
-                resolve({ type: 'existing', name: selectedSubject });
-            }
-        });
-
-        if (!importType) {
-            resetFileInput();
-            return;
-        }
-
-        // יצירת או עדכון המקצוע
-        let targetSubject;
-        if (importType.type === 'new') {
-            targetSubject = {
-                name: importType.name,
-                lessonsPerDay: [0,0,0,0,0,0],
-                topics: [],
-                startDate: document.getElementById('startDate').value,
-                endDate: document.getElementById('endDate').value,
-                lastUpdate: new Date().toISOString()
-            };
-            subjects.set(importType.name, targetSubject);
-        } else {
-            targetSubject = {
-                ...subjects.get(importType.name),
-                topics: [],
-                lastUpdate: new Date().toISOString()
-            };
-        }
-
-        // עיבוד הנתונים מהקובץ
-        let currentTopic = null;
-        let topicData = null;
-
-        for (const row of rows) {
-            if (row.length < 4) continue;
-
-            const [_, topicTitle, subtopicTitle, lessons, notes] = row;
-            if (!topicTitle || !subtopicTitle) continue;
-
-            if (!currentTopic || currentTopic !== topicTitle) {
-                if (topicData) {
-                    targetSubject.topics.push(topicData);
-                }
-                currentTopic = topicTitle;
-                topicData = {
-                    title: topicTitle,
-                    lessons: 0,
-                    subtopics: []
-                };
-            }
-
-            const subtopicLessons = parseInt(lessons) || 1;
-            topicData.lessons += subtopicLessons;
-            topicData.subtopics.push({
-                title: subtopicTitle,
-                lessons: subtopicLessons,
-                notes: notes || ''
-            });
-        }
-
-        // הוספת הנושא האחרון
-        if (topicData) {
-            targetSubject.topics.push(topicData);
-        }
-
-        // עדכון ה-Map
-        subjects.set(targetSubject.name, targetSubject);
-
-        // שמירה למאגר
-        saveSubjectsToStorage();
-
-        // עדכון הממשק
-        updateSubjectSelect();
-
-        // בחירת המקצוע החדש/מעודכן
-        document.getElementById('subjectSelect').value = targetSubject.name;
-
-        // טעינת הנתונים לממשק
-        currentSubject = targetSubject;
-        await loadSubjectData();
-
-        // עדכון הטבלה
-        await generateTable();
-
-        showError('הנתונים יובאו בהצלחה');
-
-    } catch (error) {
-        console.error('Error importing CSV:', error);
-        showError('שגיאה בקריאת הקובץ');
-    } finally {
-        resetFileInput(); // Reset file input in all cases
-    }
-}
-
-// Update the file input HTML
-// <input type="file" id="csvFileInput" accept=".csv" style="display: none" onchange="importFromCSV(this.files[0])">
-
-function resetFileInput() {
-    const fileInput = document.getElementById('csvFileInput');
-    fileInput.value = ''; // Reset the file input
-}
-
 function askForNewSubjectName() {
     return new Promise(resolve => {
         const name = prompt('הכנס שם למקצוע החדש:');
@@ -3429,51 +4045,78 @@ function askForImportType() {
         resolve(result ? 'new' : 'existing');
     });
 }
-async function generateSchoolYears() {
-    const currentYear = new Date().getFullYear();
-    const years = [];
-    const startYear = currentYear - 5;
-    const endYear = currentYear + 5;
+async function testHebrewYear(year) {
+    const dates = [
+        new Date(year, 0, 1),   // 1 בינואר
+        new Date(year, 8, 1)    // 1 בספטמבר
+    ];
 
-    for (let year = startYear; year <= endYear; year++) {
-        const tishriDate = new Date(year, 8, 15); // אמצע תשרי
-        const hebrewYear = await getHebrewYearForDate(tishriDate);
-        if (hebrewYear) {
-            const letter = getHebrewYearLetter(hebrewYear);
-            years.push({
-                value: year,
-                label: `תשפ"${letter} - ${year}/${year + 1}`
-            });
-        }
+    for (let date of dates) {
+        const hebrewYear = await getHebrewYearForDate(date);
+        console.log(`
+            Date: ${date.toISOString()}
+            Hebrew Year: ${hebrewYear}
+        `);
     }
+}
+async function generateSchoolYears() {
+   const currentDate = new Date();
+   const currentYear = currentDate.getFullYear();
+   const currentMonth = currentDate.getMonth() + 1;
 
-    const select = document.getElementById('schoolYear');
-    select.innerHTML = years.map(year =>
-        `<option value="${year.value}" ${year.value === currentYear ? 'selected' : ''}>
-            ${year.label}
-        </option>`
-    ).join('');
+   // התאמת השנה הנוכחית
+   const adjustedYear = currentMonth >= 7 ? currentYear : currentYear - 1;
+
+   const years = [];
+   const startYear = adjustedYear - 5;
+   const endYear = adjustedYear + 5;
+
+   for (let year = startYear; year <= endYear; year++) {
+       const hebrewYear = await getHebrewYearForDate(new Date(year, 0, 1)); // 1 בינואר
+       if (hebrewYear) {
+           const letter = getHebrewYearLetter(hebrewYear + 1);
+           years.push({
+               value: year,
+               label: `תשפ"${letter} - ${year}/${year + 1}`
+           });
+       }
+   }
+
+   const select = document.getElementById('schoolYear');
+   select.innerHTML = years.map(year =>
+       `<option value="${year.value}" ${year.value === adjustedYear ? 'selected' : ''}>
+           ${year.label}
+       </option>`
+   ).join('');
 }
 
 async function updateDates() {
-    const year = document.getElementById('schoolYear').value;
-    if (!year) return;
+   const year = document.getElementById('schoolYear').value;
+   if (!year) return;
 
-    const startDate = `${year}-09-01`;
-    const endDate = `${Number(year) + 1}-06-30`;
+   const { start, end } = calculateSchoolYearDates(Number(year));
 
-    document.getElementById('startDate').value = startDate;
-    document.getElementById('endDate').value = endDate;
+   document.getElementById('startDate').value = start;
+   document.getElementById('endDate').value = end;
 
-    if (currentSubject) {
-        currentSubject.startDate = startDate;
-        currentSubject.endDate = endDate;
-        saveSubjectsToStorage();
-    }
+   if (currentSubject) {
+       currentSubject.startDate = start;
+       currentSubject.endDate = end;
+       saveSubjectsToStorage();
+   }
 
-    generateTable();
+   generateTable();
 }
 
+function calculateSchoolYearDates(year) {
+   const startDate = new Date(year, 8, 1);
+   const endDate = new Date(year + 1, 5, 30);
+
+   return {
+       start: formatDate(startDate),
+       end: formatDate(endDate)
+   };
+}
 async function getWeekLessons(weekDays) {
     if (!currentSubject) return Array(6).fill(0);
 
@@ -3484,7 +4127,110 @@ async function getWeekLessons(weekDays) {
     }
     return lessons;
 }
+function updateExportMenu() {
+    const menu = document.getElementById('exportMenu');
+    menu.innerHTML = `
+        <a onclick="askExportFormat('planning')">ייצוא תכנון</a>
+        <a onclick="askExportFormat('schedule')">ייצוא לוז</a>
+        <a onclick="askExportFormat('all')">ייצוא הכל</a>
+    `;
+}
 
+function askExportFormat(type) {
+    document.getElementById('exportMenu').style.display = 'none';
+    const format = prompt('בחר פורמט לייצוא (json/csv):', 'json').toLowerCase();
+
+    if (format === 'json') {
+        exportToJSON(type);
+    } else if (format === 'csv') {
+        exportToCSV(type);
+    } else {
+        showError('פורמט לא נתמך');
+    }
+}
+async function sendToWhatsApp(type = 'all') {
+    if (!currentSubject) {
+        showError('יש לבחור מקצוע תחילה');
+        return;
+    }
+
+    // בקשת מספר טלפון
+    let phoneNumber = prompt('הכנס מספר טלפון לשליחה (לדוגמה: 0501234567):');
+    if (!phoneNumber) return;
+
+    // ניקוי המספר מתווים מיוחדים
+    phoneNumber = phoneNumber.replace(/[^0-9]/g, '');
+
+    // בדיקת תקינות המספר
+    if (phoneNumber.length !== 10 || !phoneNumber.startsWith('05')) {
+        showError('מספר טלפון לא תקין');
+        return;
+    }
+
+    try {
+        // יצירת הקובץ
+        const data = generateExportData(type);
+        const blob = new Blob(['\ufeff' + data], { type: 'text/csv;charset=utf-8;' });
+        const file = new File([blob], `${currentSubject.name}_${type}.csv`, { type: 'text/csv' });
+
+        // יצירת הודעה
+        let message = `קובץ תכנון למקצוע ${currentSubject.name}`;
+        if (type === 'planning') {
+            message = `תכנון למקצוע ${currentSubject.name}`;
+        } else if (type === 'schedule') {
+            message = `לוז למקצוע ${currentSubject.name}`;
+        }
+
+        // הוספת תאריכים
+        const startDate = document.getElementById('startDate').value;
+        const endDate = document.getElementById('endDate').value;
+        if (startDate && endDate) {
+            const formattedStartDate = new Date(startDate).toLocaleDateString('he-IL');
+            const formattedEndDate = new Date(endDate).toLocaleDateString('he-IL');
+            message += ` לתקופה ${formattedStartDate} - ${formattedEndDate}`;
+        }
+
+        if (navigator.canShare && navigator.canShare({ files: [file] })) {
+            // שימוש ב Web Share API כשאפשר
+            const shareData = {
+                files: [file],
+                title: message,
+                text: message
+            };
+
+            try {
+                await navigator.share(shareData);
+            } catch (err) {
+                // אם השיתוף נכשל, נחזור לדרך הרגילה
+                fallbackShare();
+            }
+        } else {
+            fallbackShare();
+        }
+        function fallbackShare() {
+          // המרת המספר לפורמט בינלאומי
+          const whatsappNumber = '972' + phoneNumber.substring(1);
+
+          // הורדת הקובץ
+          const link = document.createElement('a');
+          link.href = URL.createObjectURL(blob);
+          link.download = `${currentSubject.name}_${type}.csv`;
+          document.body.appendChild(link);
+          link.click();
+          document.body.removeChild(link);
+          URL.revokeObjectURL(link.href);
+
+          // פתיחת ווטסאפ
+          window.open(`https://wa.me/${whatsappNumber}?text=${encodeURIComponent(message)}`, '_blank');
+
+          showError('הקובץ הורד. אנא שלח אותו בצ׳אט הווטסאפ שנפתח');
+      }
+
+  } catch (error) {
+      console.error('Error sharing:', error);
+      showError('שגיאה בשיתוף הקובץ');
+  }
+}
 function updateTotalLessons() {
     const totalPlanned = Array.from(document.querySelectorAll('.topic-container'))
         .reduce((sum, topic) => sum + (parseInt(topic.querySelector('.topic-lessons').value) || 0), 0);
@@ -3513,8 +4259,10 @@ function togglePlanningSection() {
 async function initializeApp() {
     try {
         loadSubjectsFromStorage();
+        testHebrewYear(2024);
         await generateSchoolYears();
         await updateDates();
+        await populateTemplatesDropdown(); // הוספת שורה זו
     } catch (error) {
         console.error('Error initializing app:', error);
         showError('שגיאה באתחול האפליקציה');
@@ -3529,7 +4277,16 @@ window.addEventListener('beforeunload', () => {
         saveSubjectsToStorage();
     }
 });
-
+document.addEventListener('click', function(event) {
+    if (!event.target.matches('.dropdown button')) {
+        document.getElementById('shareMenu').style.display = 'none';
+    }
+});
+document.addEventListener('click', function(event) {
+    if (!event.target.matches('.dropdown button')) {
+        document.getElementById('whatsappMenu').style.display = 'none';
+    }
+});
 </script>
 </body>
 </html>
